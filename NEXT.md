@@ -1,8 +1,14 @@
 # NEXT
 
-## ▶ Next session: Shane reviews the Phase 1 plan below, then `go` starts task 1.3 (1.2 is already green)
+## ▶ Next session: `go` starts task 1.4 (contracts and lint)
 
-Nothing under `src/` exists. Do not write `src/pipeline/`, the providers, the eval or the drift code until the plan is approved. Model: Fable 5.1 (pinned, D-4).
+Plan approved on `go` with the Q1–Q5 defaults (D-29). Model: Fable 5.1 (pinned, D-4).
+
+**2026-10-19, task 1.3 done.** `src/pipeline/num.ts` holds `roundHalfUp` (bigint, ported from LoanBook), `bps` and `picoToCents`. `src/io/hash.ts` holds `sha256File` and `recordedHashes()`, which parses the D-26 row; task 1.4's `policy:lint` should reuse it. Lineage is D-28. Tests: GC-06..08, bps cases, `shasum` equality, all five D-26 hashes. `fmtBps` was left for task 1.11, where the eval first prints one. Tasks 1.2 and 1.3 are ticked.
+
+Gate at this checkpoint: typecheck 0 errors · policy:lint stub · fixtures:check OK · `npm test` 2 files, 9 tests passed · triage:eval "0 tickets", exit 0. Spend to date: **$0**.
+
+### History
 
 **2026-10-19 (Mac, kickoff steps 1–7):** scaffold committed (`dfa05e7`), reuse check recorded as D-27 (`b7974e0`), both pushed to `shanelabountyai/triage` (public). CI workflow runs typecheck, policy:lint, fixtures:check, test, triage:eval on Node 22 with no secret. Spend to date: **$0**.
 
