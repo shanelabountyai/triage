@@ -1,12 +1,14 @@
 # NEXT
 
-## ▶ Next session: `go` starts task 1.4 (contracts and lint)
+## ▶ Next session: `go` starts task 1.5 (intake and screen)
 
-Plan approved on `go` with the Q1–Q5 defaults (D-29). Model: Fable 5.1 (pinned, D-4).
+Model: Fable 5.1 (pinned, D-4).
 
-**2026-10-19, task 1.3 done.** `src/pipeline/num.ts` holds `roundHalfUp` (bigint, ported from LoanBook), `bps` and `picoToCents`. `src/io/hash.ts` holds `sha256File` and `recordedHashes()`, which parses the D-26 row; task 1.4's `policy:lint` should reuse it. Lineage is D-28. Tests: GC-06..08, bps cases, `shasum` equality, all five D-26 hashes. `fmtBps` was left for task 1.11, where the eval first prints one. Tasks 1.2 and 1.3 are ticked.
+**2026-10-19, task 1.4 done (D-30).** `src/pipeline/validate.ts` (closed JSON-Schema subset; `schemaErrors` + `validate`), `src/pipeline/contracts.ts` (policy/drift/prices shapes, closed objects, structural only), `src/io/lint.ts` (`dataErrors`, `hashErrors`, `sourceErrors`, `pipelineErrors`), `scripts/policy-lint.ts` real. Float lint walks the TypeScript AST (dev dep already present), so the screen's regex literals in 1.5 will not trip the division rule. Task 1.6 should reuse `validate` against `schemas/triage.v1.json` (uppercase enums first; the schema says case-insensitive). Left for 1.7/1.8: route table covers every category, tier models priced.
 
-Gate at this checkpoint: typecheck 0 errors · policy:lint stub · fixtures:check OK · `npm test` 2 files, 9 tests passed · triage:eval "0 tickets", exit 0. Spend to date: **$0**.
+Gate at this checkpoint: typecheck 0 errors · policy:lint OK (data files, D-26 hashes, src/pipeline) and exits 1 on an injected `0.5` · fixtures:check OK · `npm test` 3 files, 15 tests passed · triage:eval "0 tickets", exit 0. Spend to date: **$0**.
+
+**Earlier, task 1.3:** `src/pipeline/num.ts` (`roundHalfUp`, `bps`, `picoToCents`), `src/io/hash.ts` (`sha256File`, `recordedHashes`); lineage D-28; `fmtBps` left for 1.11.
 
 ### History
 
