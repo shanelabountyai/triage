@@ -1,0 +1,13 @@
+# NEXT
+
+## ▶ Next session: scaffold on the Mac, then plan Phase 1 (stop before pipeline code)
+
+Paste the block in `KICKOFF.md` into Claude Code started in `~/Projects`, on Fable.
+
+**2026-10-19 (kickoff kit):** Kit written and reviewed in the cloud workspace and pushed to `shanelabountyai/triage` (public): PRD v1.1, decisions D-1..D-26 + O-1..O-10, domain brief with the hard-case catalog, screen, policy, cost model, drift signals, goldens GT-01..GT-14 / GS / GP / GC / GD / GE and the kickoff measurements, portfolio overlap with real donor paths, Phase 1 tasks, CLAUDE.md, KICKOFF.md, `.claude/settings.json` (Fable pin), `.env.example`, `.gitignore`. Data files: `routing/policy.v1.json`, `monitoring/drift.v1.json`, `pricing/prices.v1.json` (platform.claude.com, read 2026-10-19), `schemas/triage.v1.json`, `prompts/classify.v1.md`. Tools in `tools/` (Python 3, stdlib): `triagelib.py` (spec made executable), `build_fixtures.py` (seed 20261019), `scripted_model.py`, `reference_pipeline.py`, `golden_answers.py` (prints OK), `verify_fixtures.py` (prints OK). Fixtures generated twice in separate directories with identical sha256 for all ten files (brief §12); the full set (2.3 MB) is committed because the scripted tier files are the replay source (D-25). **Not done:** `package.json`, `npm ci`, any TypeScript, CI workflow, the build-log card, the reuse check (not reachable from this workspace).
+
+Kickoff measurements (scripted model through the real policy and arithmetic, T=7500): batch 1 — 700 tickets, 44.57% escalated, 34.43% human queue, delivered category accuracy 448/459 (97.60%), needs_human recall 99.01% with 2 misses, P1 missed 0, injection system-level 0 of 21, 26 cents per 1,000 at batch prices; batch 2 — 500, 54.80%, 49.20%, 245/254 (96.46%), 100.00%, 0, 0 of 15, 32 cents. Drift batch 2 vs 1 fired 5 of 8 signals; the override-rate signal lagged (262 < 500 bps). **These are designed error rates, not a measurement of any model** (D-23); real numbers come with the Phase 2 recordings and Shane's 30 hand judgements (D-24).
+
+Kit was re-read under product-owner and support-operations lenses before handoff (no independent subagent was available in the workspace; Shane's read is the independent one); see `docs/decisions.md` §Review log. Open items O-1..O-10 have defaults in force. Spend to date: $0.
+
+Not verified from this workspace: whether `reuse-scan.py` parses a checkbox task list; the exact token count of the cached prefix (estimated 1,316 by bytes/4; Phase 2 confirms with `count_tokens` and that it clears the 512 minimum); the model ids against `models.list()` (read from the docs only).
