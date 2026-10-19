@@ -1,10 +1,14 @@
 # NEXT
 
-## ▶ Next session: `go` starts task 1.5 (intake and screen)
+## ▶ Next session: `go` starts task 1.6 (result parsing)
 
 Model: Fable 5.1 (pinned, D-4).
 
-**2026-10-19, task 1.4 done (D-30).** `src/pipeline/validate.ts` (closed JSON-Schema subset; `schemaErrors` + `validate`), `src/pipeline/contracts.ts` (policy/drift/prices shapes, closed objects, structural only), `src/io/lint.ts` (`dataErrors`, `hashErrors`, `sourceErrors`, `pipelineErrors`), `scripts/policy-lint.ts` real. Float lint walks the TypeScript AST (dev dep already present), so the screen's regex literals in 1.5 will not trip the division rule. Task 1.6 should reuse `validate` against `schemas/triage.v1.json` (uppercase enums first; the schema says case-insensitive). Left for 1.7/1.8: route table covers every category, tier models priced.
+**2026-10-19, task 1.5 done (D-31).** `src/pipeline/screen.ts` (eight rules from triagelib, flags `iu`, one hit per rule; `screenText` = subject + "\n" + body), `src/io/tickets.ts` (`parseTickets`/`readTickets`, typed per-line errors INTAKE_JSON / FIELD / ID / DUPLICATE_ID). Screen over 1,200 fixture tickets: 36 of 36 injection tickets flagged, 0 of 1,164 others (scripted fixture set; the rules were written with it in view, so this is an upper bound). The screen also agrees with `triagelib.screen` rule for rule and match for match on every ticket (the test calls python3). Known divergence: JS `\b` is ASCII, so on non-ASCII text next to a keyword the TypeScript screen flags more than the oracle does. 1.6 reuses `validate` against `schemas/triage.v1.json`.
+
+Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 5 files, 25 tests passed · triage:eval "0 tickets", exit 0. Spend to date: **$0**.
+
+**Earlier, task 1.4 (D-30).** `src/pipeline/validate.ts` (closed JSON-Schema subset; `schemaErrors` + `validate`), `src/pipeline/contracts.ts` (policy/drift/prices shapes, closed objects, structural only), `src/io/lint.ts` (`dataErrors`, `hashErrors`, `sourceErrors`, `pipelineErrors`), `scripts/policy-lint.ts` real. Float lint walks the TypeScript AST (dev dep already present), so the screen's regex literals in 1.5 will not trip the division rule. Task 1.6 should reuse `validate` against `schemas/triage.v1.json` (uppercase enums first; the schema says case-insensitive). Left for 1.7/1.8: route table covers every category, tier models priced.
 
 Gate at this checkpoint: typecheck 0 errors · policy:lint OK (data files, D-26 hashes, src/pipeline) and exits 1 on an injected `0.5` · fixtures:check OK · `npm test` 3 files, 15 tests passed · triage:eval "0 tickets", exit 0. Spend to date: **$0**.
 
