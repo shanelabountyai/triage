@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "description": "Drift signals and thresholds for the Fernwick triage pipeline. Data, not code. Every value is integer basis points. A signal fires when its measured value reaches or exceeds its threshold. docs/domain-brief.md section 8 gives each formula; docs/decisions.md D-17..D-19 explain the choices. The thresholds were set by hand and checked against the scripted model on the frozen fixtures; they are O-5 until a real recorded batch is in.",
+  "baseline": "the most recent accepted baseline window (at kickoff: batch 1 in full)",
+  "min_window_items": 100,
+  "signals": [
+    { "id": "LABEL_MIX_TVD_CATEGORY", "kind": "distance", "field": "category", "threshold_bps": 1000, "what": "total variation distance between the window's final category mix and the baseline's" },
+    { "id": "LABEL_MIX_TVD_PRIORITY", "kind": "distance", "field": "priority", "threshold_bps": 1000, "what": "same, for priority" },
+    { "id": "OVERRIDE_RATE_DELTA", "kind": "delta", "threshold_bps": 500, "what": "override rate on human-touched items (queue plus audit sample) minus the baseline's" },
+    { "id": "ESCALATION_SHARE_DELTA", "kind": "delta", "threshold_bps": 800, "what": "share of items that went to tier B minus the baseline's" },
+    { "id": "HUMAN_QUEUE_SHARE_DELTA", "kind": "delta", "threshold_bps": 800, "what": "share of items that ended in the human queue minus the baseline's" },
+    { "id": "LOW_CONFIDENCE_SHARE_DELTA", "kind": "delta", "threshold_bps": 800, "what": "share of tier-A results with min confidence below the escalation threshold minus the baseline's" },
+    { "id": "UNSUPPORTED_LANGUAGE_SHARE_DELTA", "kind": "delta", "threshold_bps": 500, "what": "share of items the final tier reported in an unsupported language minus the baseline's" },
+    { "id": "PARSE_FAILURE_RATE", "kind": "absolute", "threshold_bps": 200, "what": "share of model results that errored, expired or failed schema validation, in the window alone" }
+  ]
+}

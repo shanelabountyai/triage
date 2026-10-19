@@ -1,0 +1,46 @@
+{
+  "version": "v1",
+  "description": "Routing policy for the Fernwick triage pipeline. Data, not code: the pipeline applies it, the oracle in tools/triagelib.py applies the same rules, and docs/decisions.md D-12..D-16 explain each field. Confidence values are integer basis points (0..10000).",
+  "labels": {
+    "category": ["BILLING", "ACCOUNT_ACCESS", "BUG", "HOW_TO", "FEATURE_REQUEST", "INTEGRATION", "PRIVACY_DATA", "OUTAGE", "SPAM", "OTHER"],
+    "priority": ["P1", "P2", "P3", "P4"],
+    "route": ["TIER1", "BILLING_OPS", "ENGINEERING", "TRUST_PRIVACY", "PRODUCT", "NONE"]
+  },
+  "supported_languages": ["en"],
+  "tiers": {
+    "A": { "model": "claude-haiku-5-5", "role": "every ticket" },
+    "B": { "model": "claude-sonnet-5-5", "role": "escalations only" }
+  },
+  "escalate_to_tier_b_when": {
+    "min_confidence_bps_below": 7500,
+    "category_in": ["PRIVACY_DATA", "OUTAGE"],
+    "tier_a_failed": true
+  },
+  "needs_human_when": {
+    "model_says_needs_human": true,
+    "priority_in": ["P1"],
+    "category_in": ["PRIVACY_DATA"],
+    "final_min_confidence_bps_below": 6000,
+    "screen_flagged": true,
+    "language_not_supported": true,
+    "final_tier_failed": true
+  },
+  "route_by_category": {
+    "BILLING": "BILLING_OPS",
+    "ACCOUNT_ACCESS": "TIER1",
+    "BUG": "ENGINEERING",
+    "HOW_TO": "TIER1",
+    "FEATURE_REQUEST": "PRODUCT",
+    "INTEGRATION": "ENGINEERING",
+    "PRIVACY_DATA": "TRUST_PRIVACY",
+    "OUTAGE": "ENGINEERING",
+    "SPAM": "NONE",
+    "OTHER": "TIER1"
+  },
+  "route_overrides": [
+    { "when": { "category": "ACCOUNT_ACCESS", "priority": "P1" }, "route": "TRUST_PRIVACY", "why": "a P1 access ticket is a lockout or a suspected takeover; both go to trust before tier 1" }
+  ],
+  "spam_floor": { "category": "SPAM", "priority": "P4", "route": "NONE", "note": "auto-handled unless another needs_human rule fires; nothing here forces needs_human false" },
+  "audit_sample_bps": 1000,
+  "audit_sample_note": "share of auto-handled items a person re-labels for the override-rate signal; chosen per item by a seeded hash so the sample is reproducible"
+}

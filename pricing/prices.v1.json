@@ -1,0 +1,63 @@
+{
+  "version": "v1",
+  "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+  "model_ids_source": "https://platform.claude.com/docs/en/models/overview",
+  "read_on": "2026-10-19",
+  "unit": "pico-USD per token (1 USD = 1,000,000,000,000 pico-USD). $0.10 per MTok = 100000 pico-USD per token. Integers only.",
+  "batch_multiplier": { "num": 1, "den": 2 },
+  "batch_multiplier_note": "Message Batches: 'All usage is charged at 50% of the standard API prices.' Prompt-caching and batch discounts stack (pricing page FAQ 'How do discounts stack?').",
+  "models": {
+    "claude-haiku-5-5": {
+      "display": "Claude Haiku 5.5 (prompt up to 100,000 tokens)",
+      "prompt_tokens_max": 100000,
+      "input": 100000,
+      "output": 500000,
+      "cache_write_5m": 125000,
+      "cache_write_1h": 200000,
+      "cache_read": 10000,
+      "min_cacheable_tokens": 512
+    },
+    "claude-haiku-5-5:long": {
+      "display": "Claude Haiku 5.5 (prompt over 100,000 tokens)",
+      "prompt_tokens_min_exclusive": 100000,
+      "input": 500000,
+      "output": 2500000,
+      "cache_write_5m": 625000,
+      "cache_write_1h": 1000000,
+      "cache_read": 50000,
+      "min_cacheable_tokens": 512
+    },
+    "claude-sonnet-5-5": {
+      "display": "Claude Sonnet 5.5",
+      "input": 2000000,
+      "output": 10000000,
+      "cache_write_5m": 2500000,
+      "cache_write_1h": 4000000,
+      "cache_read": 100000,
+      "min_cacheable_tokens": 512
+    },
+    "claude-opus-5-5": {
+      "display": "Claude Opus 5.5",
+      "input": 4000000,
+      "output": 20000000,
+      "cache_write_5m": 5000000,
+      "cache_write_1h": 8000000,
+      "cache_read": 200000,
+      "min_cacheable_tokens": 512
+    },
+    "claude-fable-5-1": {
+      "display": "Claude Fable 5.1",
+      "input": 10000000,
+      "output": 50000000,
+      "cache_write_5m": 12500000,
+      "cache_write_1h": 20000000,
+      "cache_read": 250000,
+      "min_cacheable_tokens": 512
+    }
+  },
+  "notes": [
+    "Haiku 5.5 is priced by prompt length; a request's prompt length counts all input tokens including cache reads and writes, and each request is priced on its own. The pipeline picks the row by the request's total input tokens.",
+    "Cache read multiplier is 0.1x on Haiku 5.5, 0.05x on Opus 5.5 and Sonnet 5.5, 0.025x on Fable 5.1 (pricing page, prompt caching section). The values above are the page's listed per-MTok numbers converted to pico-USD, not derived from the multipliers.",
+    "Unknown model id: the cost function raises. Never guess a price."
+  ]
+}

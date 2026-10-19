@@ -1,0 +1,17 @@
+{
+  "$comment": "Structured-output schema for one triage result (output_config.format, type json_schema). Every key required, no nullable types, additionalProperties false, enum comparison case-insensitive (structured-outputs docs: enum casing is not guaranteed). Confidence is an integer in basis points 0..10000; numeric bounds are not supported by the API's schema subset, so the pipeline rejects out-of-range values after parsing. The model is not asked for route: route is derived from category and priority by routing/policy.v1.json (D-13).",
+  "type": "object",
+  "properties": {
+    "category": { "type": "string", "enum": ["BILLING", "ACCOUNT_ACCESS", "BUG", "HOW_TO", "FEATURE_REQUEST", "INTEGRATION", "PRIVACY_DATA", "OUTAGE", "SPAM", "OTHER"] },
+    "category_confidence_bps": { "type": "integer" },
+    "priority": { "type": "string", "enum": ["P1", "P2", "P3", "P4"] },
+    "priority_confidence_bps": { "type": "integer" },
+    "needs_human": { "type": "boolean" },
+    "needs_human_confidence_bps": { "type": "integer" },
+    "language": { "type": "string", "description": "ISO 639-1 code of the ticket body, lowercase" },
+    "secondary_category": { "type": "string", "enum": ["NONE", "BILLING", "ACCOUNT_ACCESS", "BUG", "HOW_TO", "FEATURE_REQUEST", "INTEGRATION", "PRIVACY_DATA", "OUTAGE", "SPAM", "OTHER"] },
+    "reason": { "type": "string", "description": "one sentence, quoting the words in the ticket that decided the category" }
+  },
+  "required": ["category", "category_confidence_bps", "priority", "priority_confidence_bps", "needs_human", "needs_human_confidence_bps", "language", "secondary_category", "reason"],
+  "additionalProperties": false
+}
