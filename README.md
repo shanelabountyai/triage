@@ -26,7 +26,7 @@ npm run policy:lint      # schema-validates the data files, checks the D-26 hash
 | Path | What |
 |---|---|
 | `prd-triage.md` | What and why. `docs/decisions.md` outranks it |
-| `docs/decisions.md` | D-1..D-26 resolved, O-1..O-10 open with defaults in force, review log |
+| `docs/decisions.md` | D-1..D-27 resolved, O-1..O-10 open with defaults in force, review log |
 | `docs/domain-brief.md` | Vocabulary, hard-case catalog, screen, routing policy, cost model, drift signals, goldens, kickoff measurements, fixture hashes |
 | `docs/phase-1-tasks.md` | Tasks 1.1–1.12 with acceptance criteria and the exit bar |
 | `docs/portfolio-overlap.md` | What is ported from sibling repos (real paths) and what is new |
