@@ -1,0 +1,27 @@
+# secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# runtime state (append-only JSONL ledgers, overrides) — never committed
+data/
+
+# recordings are committed per run on purpose (Phase 2); scratch runs are not
+recordings/scratch/
+
+# node
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# python
+__pycache__/
+*.pyc
+
+# editors / os
+.DS_Store
+.idea/
+.vscode/
