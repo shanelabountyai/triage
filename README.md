@@ -8,7 +8,18 @@ Learning project, synthetic data only. Fernwick is not a real company; every tic
 
 ## Status
 
-**Kickoff kit only (2026-10-19).** No TypeScript exists yet. What is here: the PRD, decisions, domain brief, phase-1 tasks, portfolio overlap, the data files (policy, drift signals, prices, schema, prompt), the Python oracle in `tools/`, and the frozen fixtures. Start with `KICKOFF.md`; session state is in `NEXT.md`.
+**Scaffold only (2026-10-19).** Task 1.1 of `docs/phase-1-tasks.md`: `package.json` (Node 22, ESM), strict `tsconfig.json`, vitest, `tsx`, the five npm commands as stubs that exit 0, and a CI workflow that holds no secret. No pipeline code yet: `src/` is empty and `triage:eval` prints `0 tickets`. What is here besides that: the PRD, decisions, domain brief, phase-1 tasks, portfolio overlap, the data files (policy, drift signals, prices, schema, prompt), the Python oracle in `tools/`, and the frozen fixtures. Start with `KICKOFF.md`; session state is in `NEXT.md`.
+
+## Commands (npm; none calls the Claude API)
+
+```
+npm test                 # vitest; no network, no key
+npm run triage:eval      # both fixture batches through the pipeline; prints the brief section 11 table (stub: "0 tickets")
+npm run triage:run -- --in <jsonl> --provider <scripted|recorded|live> --out <dir>   # one run (stub); live refuses before Phase 2
+npm run drift:report -- --baseline <run> --window <run>                              # the eight signals (stub)
+npm run fixtures:check   # python3 tools/verify_fixtures.py && golden_answers.py && fixtures/ unchanged in git
+npm run policy:lint      # schema-validates the data files, checks the D-26 hashes, greps src/pipeline/ (stub)
+```
 
 ## Layout
 
@@ -26,6 +37,8 @@ Learning project, synthetic data only. Fernwick is not a real company; every tic
 | `prompts/classify.v1.md` | The system prompt (the cached prefix) |
 | `tools/` | Python 3 (stdlib) test oracles: fixture generator, scripted model, reference pipeline, golden answers, freeze check |
 | `fixtures/` | 1,200 synthetic tickets in two batches, answer keys, scripted tier results, reference decisions, `MANIFEST.json` |
+| `scripts/` | The npm commands (`tsx`); product code lives under `src/` from task 1.3 |
+| `.github/workflows/ci.yml` | `typecheck`, `policy:lint`, `fixtures:check`, `test`, `triage:eval`; no secret |
 
 ## Oracle commands (Python 3, no dependencies)
 

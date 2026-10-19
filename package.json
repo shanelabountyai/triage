@@ -1,0 +1,23 @@
+{
+  "name": "triage",
+  "private": true,
+  "version": "0.1.0",
+  "description": "An LLM as a batch pipeline step for support tickets (Build Log A5). Synthetic data only; no test or CI path spends a token.",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "triage:eval": "tsx scripts/eval.ts",
+    "triage:run": "tsx scripts/run.ts",
+    "drift:report": "tsx scripts/drift-report.ts",
+    "fixtures:check": "python3 tools/verify_fixtures.py && python3 tools/golden_answers.py && git diff --exit-code fixtures/ && test -z \"$(git status --porcelain fixtures/)\"",
+    "policy:lint": "tsx scripts/policy-lint.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "tsx": "^4.23.13",
+    "typescript": "^5.6",
+    "vitest": "^2.1"
+  }
+}

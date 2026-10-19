@@ -1,0 +1,31 @@
+name: CI
+
+# No secret is ever set here (D-2): every test path replays committed fixtures, and the
+# `live` provider needs TRIAGE_LIVE=1 plus a key that CI does not have.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run policy:lint
+      - run: npm run fixtures:check   # regenerates to a temp dir, compares sha256, runs the goldens; fails if fixtures/ moved
+      - run: npm test
+      - run: npm run triage:eval      # exits non-zero if any per-ticket decision differs from fixtures/decisions_batch{1,2}.csv
