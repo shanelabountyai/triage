@@ -1,0 +1,95 @@
+{
+  "counts": {
+    "batch1": {
+      "category": {
+        "ACCOUNT_ACCESS": 103,
+        "BILLING": 125,
+        "BUG": 110,
+        "FEATURE_REQUEST": 59,
+        "HOW_TO": 154,
+        "INTEGRATION": 55,
+        "OTHER": 15,
+        "OUTAGE": 22,
+        "PRIVACY_DATA": 24,
+        "SPAM": 33
+      },
+      "hard_case": {
+        "AMBIGUOUS": 42,
+        "CHURN_THREAT": 21,
+        "INJECTION": 21,
+        "MULTI_ISSUE": 42,
+        "NONE": 539,
+        "NON_ENGLISH": 35
+      },
+      "language": {
+        "de": 10,
+        "en": 665,
+        "es": 10,
+        "fr": 8,
+        "pt": 7
+      },
+      "n": 700,
+      "needs_human": 203,
+      "priority": {
+        "P1": 42,
+        "P2": 124,
+        "P3": 418,
+        "P4": 116
+      },
+      "split": {
+        "dev": 419,
+        "test": 281
+      }
+    },
+    "batch2": {
+      "category": {
+        "ACCOUNT_ACCESS": 54,
+        "BILLING": 98,
+        "BUG": 105,
+        "FEATURE_REQUEST": 33,
+        "HOW_TO": 72,
+        "INTEGRATION": 32,
+        "OTHER": 7,
+        "OUTAGE": 61,
+        "PRIVACY_DATA": 13,
+        "SPAM": 25
+      },
+      "hard_case": {
+        "AMBIGUOUS": 30,
+        "CHURN_THREAT": 25,
+        "INJECTION": 15,
+        "MULTI_ISSUE": 30,
+        "NEW_TOPIC": 40,
+        "NONE": 300,
+        "NON_ENGLISH": 60
+      },
+      "language": {
+        "de": 7,
+        "en": 440,
+        "es": 30,
+        "fr": 14,
+        "pt": 9
+      },
+      "n": 500,
+      "needs_human": 217,
+      "priority": {
+        "P1": 70,
+        "P2": 120,
+        "P3": 245,
+        "P4": 65
+      },
+      "split": {
+        "dev": 307,
+        "test": 193
+      }
+    }
+  },
+  "generator": "tools/build_fixtures.py",
+  "seed": 20261019,
+  "sha256": {
+    "answer_key_batch1.csv": "dd06060abc659eadef8ccc662142a79ce9fffcb49e12bc552e2db8f59de9e829",
+    "answer_key_batch2.csv": "8a819ea6743e1692734777be6f68c56a305ad03dfef22e3521b6ba7e605c31df",
+    "tickets_batch1.jsonl": "e02c539529a52b11f63ac72c139dc7d63c8cc7587611ce48a65a3de35482cc3b",
+    "tickets_batch2.jsonl": "7d383de2499ae568700f3b6e64ffda650f5be7299d26c3995972092b3d28f132"
+  }
+}
