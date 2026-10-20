@@ -33,3 +33,9 @@ export function bps(num: number, den: number): number {
 export function picoToCents(pico: bigint): number {
   return safe(roundHalfUp(pico, PICO_PER_CENT));
 }
+
+/** ceil(num/den) for non-negative integers. */
+export function ceilDiv(num: bigint, den: bigint): bigint {
+  if (num < 0n || den <= 0n) throw new RangeError(`ceilDiv: invalid ${num}/${den}`);
+  return (num + den - 1n) / den;
+}

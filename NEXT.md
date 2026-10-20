@@ -1,8 +1,12 @@
 # NEXT
 
-## ▶ Next session: `go` starts task 1.8 (cost, pure)
+## ▶ Next session: `go` starts task 1.9 (run and ledger)
 
-Model: Fable 5.1 (pinned, D-4); 1.7 ran on Opus 5.5 by choice.
+Model: Fable 5.1 (pinned, D-4); 1.7 and 1.8 ran on Opus 5.5 by choice.
+
+**2026-10-20, task 1.8 done (D-34).** `src/pipeline/cost.ts` (`priceRow`, `costPico(model, usage, batch, prices)` → bigint pico, `estTokens`; types `Prices`, `PriceRow`), `ceilDiv` in `num.ts`, `Policy.tiers`. GC-01..09 pass; `cost_pico_batch`/`cost_pico_standard` equal the CSVs on all 1,200 tickets (a mutant pricing 1h writes at 5m fails it). For 1.9: per-ticket cost = `costPico(a.model ?? policy.tiers.A.model, a.usage, …) + (b ? costPico(b.model ?? policy.tiers.B.model, b.usage, …) : 0n)`, as `tests/cost.test.ts` does; the last two CSV columns (`human_touched`, `overridden`) need the audit sample (1.10's `audit_sampled`) and the answer key, which product code never reads, so 1.9's "every column" check has to say how it gets them.
+
+Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 8 files, 42 tests passed · triage:eval "0 tickets", exit 0. Spend to date: **$0**.
 
 **2026-10-20, task 1.7 done (D-33).** `src/pipeline/decide.ts` (`escalate`, `routeFor`, `decide(ticketId, text, a, b, policy)`, `minBps`; types `Policy`, `Decision`). GT-01..14 pass; batch 1 twice → identical; path..reasons equal `fixtures/decisions_batch{1,2}.csv` on all 1,200 tickets (a `<=`/+500 mutant on the 6000 floor fails the test). For 1.8: the CSV's last four columns (`cost_pico_batch`, `cost_pico_standard`, `human_touched`, `overridden`) are what `tests/decide.test.ts` strips; cost is A's usage plus B's when escalated, with the tier's model from the policy when `tierResult.model` is null (`reference_pipeline.run_batch`).
 
