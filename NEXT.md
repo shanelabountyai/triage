@@ -1,8 +1,12 @@
 # NEXT
 
-## ▶ Next session: `go` starts task 1.6 (result parsing)
+## ▶ Next session: `go` starts task 1.7 (routing policy, pure)
 
 Model: Fable 5.1 (pinned, D-4).
+
+**2026-10-20, task 1.6 done (D-32).** `src/pipeline/parse.ts` (`parseResult(text, schema)`, `tierResult`; types `Parsed`, `Usage`, `BatchResult`, `TierResult`), `src/io/results.ts` (`parseResults`/`readResults`, typed RESULT_JSON / SHAPE / DUPLICATE_ID). GP-01..08 pass. Over the four scripted files (2,400 lines): 0 reader errors; tier A batch 1 PARSE_ENUM:category 6, PARSE_JSON 3, errored 10; batch 2 2 / 2 / 2; tier B errored over escalated tickets 0 (batch 1) and 2 (batch 2), escalated set taken from the decisions CSV in the test only; failure code, every parsed field and every usage count agree with `reference_pipeline.to_tier` on all 2,400 lines. For 1.7: `tierResult` returns `model: null` for a non-succeeded or missing line, so `decide` takes the tier's model from the policy (as the oracle does); the parsed fields are camelCase (`categoryBps`, `priorityBps`, `needsHumanBps`, `secondaryCategory`).
+
+Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 6 files, 31 tests passed · triage:eval "0 tickets", exit 0. Spend to date: **$0**.
 
 **2026-10-19, task 1.5 done (D-31).** `src/pipeline/screen.ts` (eight rules from triagelib, flags `iu`, one hit per rule; `screenText` = subject + "\n" + body), `src/io/tickets.ts` (`parseTickets`/`readTickets`, typed per-line errors INTAKE_JSON / FIELD / ID / DUPLICATE_ID). Screen over 1,200 fixture tickets: 36 of 36 injection tickets flagged, 0 of 1,164 others (scripted fixture set; the rules were written with it in view, so this is an upper bound). The screen also agrees with `triagelib.screen` rule for rule and match for match on every ticket (the test calls python3). Known divergence: JS `\b` is ASCII, so on non-ASCII text next to a keyword the TypeScript screen flags more than the oracle does. 1.6 reuses `validate` against `schemas/triage.v1.json`.
 
