@@ -56,7 +56,9 @@ export function validate(v: unknown, s: Schema, path = '$'): string[] {
       if (!isObj(v)) return [`${path}: expected object`];
       const errs = (s.required ?? []).filter((k) => !Object.hasOwn(v, k)).map((k) => `${path}.${k}: required`);
       for (const [k, x] of Object.entries(v)) {
-        const p = s.properties?.[k] ?? s.additionalProperties;
+        // Own keys only: a plain `properties[k]` lookup finds Object.prototype members, so an
+        // extra key named `constructor`, `toString` or `__proto__` slipped past additionalProperties: false.
+        const p = s.properties && Object.hasOwn(s.properties, k) ? s.properties[k] : s.additionalProperties;
         if (p === false) errs.push(`${path}.${k}: not allowed`);
         else if (p) errs.push(...validate(x, p, `${path}.${k}`));
       }
