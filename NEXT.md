@@ -1,8 +1,12 @@
 # NEXT
 
-## ▶ Next session: `go` starts task 1.7 (routing policy, pure)
+## ▶ Next session: `go` starts task 1.8 (cost, pure)
 
-Model: Fable 5.1 (pinned, D-4).
+Model: Fable 5.1 (pinned, D-4); 1.7 ran on Opus 5.5 by choice.
+
+**2026-10-20, task 1.7 done (D-33).** `src/pipeline/decide.ts` (`escalate`, `routeFor`, `decide(ticketId, text, a, b, policy)`, `minBps`; types `Policy`, `Decision`). GT-01..14 pass; batch 1 twice → identical; path..reasons equal `fixtures/decisions_batch{1,2}.csv` on all 1,200 tickets (a `<=`/+500 mutant on the 6000 floor fails the test). For 1.8: the CSV's last four columns (`cost_pico_batch`, `cost_pico_standard`, `human_touched`, `overridden`) are what `tests/decide.test.ts` strips; cost is A's usage plus B's when escalated, with the tier's model from the policy when `tierResult.model` is null (`reference_pipeline.run_batch`).
+
+Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 7 files, 36 tests passed · triage:eval "0 tickets", exit 0. Spend to date: **$0**.
 
 **2026-10-20, task 1.6 done (D-32).** `src/pipeline/parse.ts` (`parseResult(text, schema)`, `tierResult`; types `Parsed`, `Usage`, `BatchResult`, `TierResult`), `src/io/results.ts` (`parseResults`/`readResults`, typed RESULT_JSON / SHAPE / DUPLICATE_ID). GP-01..08 pass. Over the four scripted files (2,400 lines): 0 reader errors; tier A batch 1 PARSE_ENUM:category 6, PARSE_JSON 3, errored 10; batch 2 2 / 2 / 2; tier B errored over escalated tickets 0 (batch 1) and 2 (batch 2), escalated set taken from the decisions CSV in the test only; failure code, every parsed field and every usage count agree with `reference_pipeline.to_tier` on all 2,400 lines. For 1.7: `tierResult` returns `model: null` for a non-succeeded or missing line, so `decide` takes the tier's model from the policy (as the oracle does); the parsed fields are camelCase (`categoryBps`, `priorityBps`, `needsHumanBps`, `secondaryCategory`).
 
