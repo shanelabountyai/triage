@@ -12,7 +12,7 @@
     "B": { "model": "claude-sonnet-5-5", "role": "escalations only" }
   },
   "escalate_to_tier_b_when": {
-    "min_confidence_bps_below": 7000,
+    "min_confidence_bps_below": 7500,
     "category_in": ["PRIVACY_DATA", "OUTAGE"],
     "tier_a_failed": true
   },
