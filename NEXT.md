@@ -1,8 +1,26 @@
 # NEXT
 
-## ▶ Next session: `go` starts task 1.6 (result parsing)
+## ▶ Phase 1 gate reached — Shane reviews PR #1, then answers the four Phase 2 questions
 
-Model: Fable 5.1 (pinned, D-4).
+Model: Fable 5.1 (pinned, D-4). **Branch `phase-1-cloud`, PR https://github.com/shanelabountyai/triage/pull/1 — not merged.** Built in a cloud session (tasks 1.6–1.12); the Mac session had done 1.1–1.5 and `main` had not moved since `b94a651`.
+
+**2026-10-19, tasks 1.6–1.12 done (D-32..D-37).** Parse and result reader (1.6), routing policy and batch runner (1.7), cost (1.8), providers, `triage:run` and the ledger (1.9), overrides, the O-6 stand-in and drift (1.10), `triage:eval` (1.11), `docs/EVAL.md` and the CI gate proof (1.12). `triage:eval` output is byte-identical to `fixtures/samples/reference_pipeline.output.txt` (102 lines) and all 1,200 per-ticket decisions equal the reference on all 15 columns. Scripted model, designed error rates, not a measurement: batch 1 needs_human recall 99.01% (fn 2), P1 missed 0 of 42, delivered category 448/459 (97.60%), test split 97.25% of 182, escalation 44.57%, 26 cents per 1,000 at batch prices.
+
+**Gate proof (task 1.12), on a throwaway PR (#2, closed unmerged) into `phase-1-cloud`:**
+- Red — `min_confidence_bps_below` 7500 → 7000: https://github.com/shanelabountyai/triage/actions/runs/39352149864 (failed at `policy:lint`, the D-26 hash; fixtures:check, test and eval skipped). That the eval itself goes red on the same change is a unit test (`tests/eval.test.ts`, per-ticket diffs non-empty at T=7000).
+- Green — reverted to 7500: https://github.com/shanelabountyai/triage/actions/runs/39352270830
+- Green on the PR branch itself: https://github.com/shanelabountyai/triage/actions/runs/39352127424
+- **By hand:** delete branch `gate-proof-t7000` on GitHub (the cloud session's proxy refuses branch deletion).
+
+Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 11 files, 101 tests passed · triage:eval 102 lines equal to the reference, exit 0. Secret scan before push: empty. Spend to date: **$0**.
+
+**What Shane decides:**
+- Review PR #1; merge when satisfied. Things worth a look are listed in the PR body (D-32's float handling and NaN divergence; D-34/D-35 ports written from D-27's description because the donor trees are on the Mac, not in the cloud; the new `overrides:standin` script; three extra decision-row fields).
+- `docs/phase-2-tasks.md` (drafted at the gate, nothing started): Q1 spend (SDK, key on the Mac, caps), Q2 recordings layout, Q3 where the audit seed lives, Q4 where the live run happens.
+- Task 1.1 is still unticked in `docs/phase-1-tasks.md` (done at kickoff; left for you).
+- If the Mac session still has uncommitted Triage work from 1.6 onward, drop it: this branch covers 1.6–1.12.
+
+### Phase 1 tasks 1.1–1.5 (Mac session)
 
 **2026-10-19, task 1.5 done (D-31).** `src/pipeline/screen.ts` (eight rules from triagelib, flags `iu`, one hit per rule; `screenText` = subject + "\n" + body), `src/io/tickets.ts` (`parseTickets`/`readTickets`, typed per-line errors INTAKE_JSON / FIELD / ID / DUPLICATE_ID). Screen over 1,200 fixture tickets: 36 of 36 injection tickets flagged, 0 of 1,164 others (scripted fixture set; the rules were written with it in view, so this is an upper bound). The screen also agrees with `triagelib.screen` rule for rule and match for match on every ticket (the test calls python3). Known divergence: JS `\b` is ASCII, so on non-ASCII text next to a keyword the TypeScript screen flags more than the oracle does. 1.6 reuses `validate` against `schemas/triage.v1.json`.
 
