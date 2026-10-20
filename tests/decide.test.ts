@@ -91,7 +91,8 @@ describe('the fixture batches through the policy', () => {
     });
   }
   it('batch 1 run twice: identical decisions (determinism)', () => {
-    expect(JSON.stringify(batch(1))).toBe(JSON.stringify(batch(1)));
+    const ser = (x: unknown) => JSON.stringify(x, (_k, v: unknown) => (typeof v === 'bigint' ? String(v) : v));
+    expect(ser(batch(1))).toBe(ser(batch(1)));
   });
   it('model results used and failed match brief §11 (1,012 / 19 and 774 / 8)', () => {
     const counts = (n: 1 | 2) => {
