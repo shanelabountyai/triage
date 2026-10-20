@@ -8,17 +8,18 @@ Learning project, synthetic data only. Fernwick is not a real company; every tic
 
 ## Status
 
-**Scaffold only (2026-10-19).** Task 1.1 of `docs/phase-1-tasks.md`: `package.json` (Node 22, ESM), strict `tsconfig.json`, vitest, `tsx`, the five npm commands as stubs that exit 0, and a CI workflow that holds no secret. No pipeline code yet: `src/` is empty and `triage:eval` prints `0 tickets`. What is here besides that: the PRD, decisions, domain brief, phase-1 tasks, portfolio overlap, the data files (policy, drift signals, prices, schema, prompt), the Python oracle in `tools/`, and the frozen fixtures. Start with `KICKOFF.md`; session state is in `NEXT.md`.
+**Phase 1 built (2026-10-19), on branch `phase-1-cloud`, pending Shane's review.** Tasks 1.1–1.12 of `docs/phase-1-tasks.md`: the pipeline (screen, parse, policy, cost, run, ledger, overrides, drift) and `triage:eval` run on the scripted fixtures and reproduce `tools/reference_pipeline.py` byte for byte, all 1,200 per-ticket decisions included; CI enforces it with no secret. Every number so far is from the scripted model (`docs/EVAL.md`). No model has been called; spend to date $0. Phase 2 (live adapter, recordings, caps) is planned in `docs/phase-2-tasks.md` and waits for review. Session state is in `NEXT.md`.
 
 ## Commands (npm; none calls the Claude API)
 
 ```
 npm test                 # vitest; no network, no key
-npm run triage:eval      # both fixture batches through the pipeline; prints the brief section 11 table (stub: "0 tickets")
-npm run triage:run -- --in <jsonl> --provider <scripted|recorded|live> --out <dir>   # one run (stub); live refuses before Phase 2
-npm run drift:report -- --baseline <run> --window <run>                              # the eight signals (stub)
+npm run triage:eval      # both fixture batches through the pipeline; prints the brief section 11 report; exits 1 on any per-ticket difference
+npm run triage:run -- --in <jsonl> --provider <scripted|recorded|live> --out <dir>   # one run: decisions.jsonl, run.json, a row in data/runs.jsonl; live refuses before Phase 2
+npm run drift:report -- --baseline <run dir> --window <run dir> [--overrides <path>] # the eight signals and which fired
+npm run overrides:standin -- --run <run dir> --key <answer key csv>                  # fixtures only: the answer key as the reviewer (O-6)
 npm run fixtures:check   # python3 tools/verify_fixtures.py && golden_answers.py && fixtures/ unchanged in git
-npm run policy:lint      # schema-validates the data files, checks the D-26 hashes, greps src/pipeline/ (stub)
+npm run policy:lint      # schema-validates the data files, checks the D-26 hashes, purity and float lint over src/pipeline/
 ```
 
 ## Layout
@@ -26,9 +27,11 @@ npm run policy:lint      # schema-validates the data files, checks the D-26 hash
 | Path | What |
 |---|---|
 | `prd-triage.md` | What and why. `docs/decisions.md` outranks it |
-| `docs/decisions.md` | D-1..D-27 resolved, O-1..O-10 open with defaults in force, review log |
+| `docs/decisions.md` | D-1..D-37 resolved, O-1..O-10 open with defaults in force, review log |
 | `docs/domain-brief.md` | Vocabulary, hard-case catalog, screen, routing policy, cost model, drift signals, goldens, kickoff measurements, fixture hashes |
 | `docs/phase-1-tasks.md` | Tasks 1.1–1.12 with acceptance criteria and the exit bar |
+| `docs/phase-2-tasks.md` | Phase 2 plan, written at the Phase 1 gate, for review |
+| `docs/EVAL.md` | The eval as `triage:eval` prints it, with the results source and fixture hashes |
 | `docs/portfolio-overlap.md` | What is ported from sibling repos (real paths) and what is new |
 | `routing/policy.v1.json` | Labels, tiers, escalation rule, needs_human rules, route table |
 | `monitoring/drift.v1.json` | Eight drift signals with thresholds in basis points |
@@ -37,7 +40,9 @@ npm run policy:lint      # schema-validates the data files, checks the D-26 hash
 | `prompts/classify.v1.md` | The system prompt (the cached prefix) |
 | `tools/` | Python 3 (stdlib) test oracles: fixture generator, scripted model, reference pipeline, golden answers, freeze check |
 | `fixtures/` | 1,200 synthetic tickets in two batches, answer keys, scripted tier results, reference decisions, `MANIFEST.json` |
-| `scripts/` | The npm commands (`tsx`); product code lives under `src/` from task 1.3 |
+| `src/pipeline/` | Pure stages: screen, parse, decide, cost, drift, eval maths (no I/O, no clock, no network; linted) |
+| `src/io/`, `src/providers/`, `src/eval/` | File I/O, run and ledger; the three providers; the eval and the O-6 stand-in (the only readers of an answer key) |
+| `scripts/` | The npm commands (`tsx`) |
 | `.github/workflows/ci.yml` | `typecheck`, `policy:lint`, `fixtures:check`, `test`, `triage:eval`; no secret |
 
 ## Oracle commands (Python 3, no dependencies)

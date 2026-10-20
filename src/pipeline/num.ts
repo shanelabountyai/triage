@@ -33,3 +33,30 @@ export function bps(num: number, den: number): number {
 export function picoToCents(pico: bigint): number {
   return safe(roundHalfUp(pico, PICO_PER_CENT));
 }
+
+/**
+ * Cents per 1,000 tickets: round_half_up(total × 1000 / n) over the exact rational, once (brief
+ * §8, D-10). The oracle floors to whole pico first; every half-cent boundary is a whole number of
+ * pico, so the two always print the same cents. n = 0 → 0.
+ */
+export function centsPer1000(totalPico: bigint, n: number): number {
+  if (n === 0) return 0;
+  return safe(roundHalfUp(totalPico * 1000n, int(n) * PICO_PER_CENT));
+}
+
+/** ceil(a / b) for non-negative integers; used by the labelled token estimate. */
+export function ceilDiv(a: number, b: number): number {
+  if (!Number.isSafeInteger(a) || !Number.isSafeInteger(b) || a < 0 || b <= 0) throw new RangeError(`ceilDiv: invalid ${a}/${b}`);
+  return safe((int(a) + int(b) - 1n) / int(b));
+}
+
+/**
+ * Basis points as the printed percentage with two decimals ("4457" → "44.57%"), from the integer
+ * digits only, so no float reaches a printed number (D-29 Q4). Negative values keep their sign.
+ */
+export function fmtBps(v: number): string {
+  if (!Number.isSafeInteger(v)) throw new RangeError(`fmtBps: not an integer: ${v}`);
+  const sign = v < 0 ? '-' : '';
+  const a = int(v < 0 ? -v : v);
+  return `${sign}${a / 100n}.${String(a % 100n).padStart(2, '0')}%`;
+}
