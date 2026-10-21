@@ -1,8 +1,11 @@
 # NEXT
 
-## ▶ Next session: Phase 1 gate review. `docs/phase-2-tasks.md` waits for Shane; do not start 2.1 until it is approved
+## ▶ Next session: task 2.1. Add `@anthropic-ai/sdk` at exact 0.137.0 (D-40), imported only under `src/providers/`
 
-Model: Fable 5.1 (pinned, D-4).
+Model: Opus 5.5, Shane's choice for Phase 2 (D-40). The D-4 pin is unchanged.
+
+**2026-10-21: Phase 1 gate reviewed. The open questions are answered in D-40:** SDK exact 0.137.0 (1.0.0 came out the same day, so it waits about two weeks for a new D-entry); effort `low`; the 2.3 projection allows `max_tokens` output tokens per request; refusal becomes `PARSE_REFUSAL`, a new D-8 code with a GP golden (task 2.2); the key goes in `.env.local`, loaded only by `scripts/run.ts`. Deps change in 2.1, so check that `npm ci` is clean and that `policy:lint` still passes. Spend to date: **$0**.
+
 
 **2026-10-21: task 1.12 done, Phase 1 exit criteria met.** `docs/EVAL.md` pastes `npm run -s triage:eval 2>/dev/null` verbatim (scripted, designed error model, not a measurement; D-23), with the five D-26 hashes and the ten fixture hashes. 1,200 of 1,200 per-ticket decisions are equal, and stdout is byte-identical to the reference.
 - **Red run:** https://github.com/shanelabountyai/triage/actions/runs/39618261876. This was draft PR #4, which moved T from 7500 to 7000 on a throwaway branch; the PR is closed unmerged and the branch deleted. typecheck passed. policy:lint failed (D-26 hash), fixtures:check failed, npm test failed (7 of 11 files) and triage:eval failed (451 per-ticket differences).

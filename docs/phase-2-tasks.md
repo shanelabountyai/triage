@@ -1,6 +1,6 @@
 # Phase 2: live adapter, recordings, caps, real eval
 
-Drafted at the Phase 1 gate (2026-10-21). **Not started: waiting for Shane's review.** This is the first phase that spends money. Every live call needs `TRIAGE_LIVE=1`, a key and headroom under both caps (D-19). Tests and CI keep replaying files and never call the API (D-2). The exit bar is one committed recording per batch on the default pair, a `triage:eval --provider recorded` table printed next to the scripted one, real cost and cache-read share from usage fields, and Shane's 30 hand judgements recorded.
+Drafted at the Phase 1 gate (2026-10-21). **Open questions answered 2026-10-21 (D-40); 2.1 is next.** This is the first phase that spends money. Every live call needs `TRIAGE_LIVE=1`, a key and headroom under both caps (D-19). Tests and CI keep replaying files and never call the API (D-2). The exit bar is one committed recording per batch on the default pair, a `triage:eval --provider recorded` table printed next to the scripted one, real cost and cache-read share from usage fields, and Shane's 30 hand judgements recorded.
 
 API facts below were checked against the bundled claude-api reference on 2026-10-21. Re-check them against the live docs when 2.1 lands.
 
@@ -24,4 +24,4 @@ API facts below were checked against the bundled claude-api reference on 2026-10
 
 **Exit criteria:** recordings committed for both batches; `triage:eval --provider recorded` is green in CI with no key; real cost and cache-read share printed; spend to date stated and under the project cap; the 30 judgements recorded; EVAL.md shows both columns.
 
-**Open for Shane before 2.1:** the SDK version pin, the effort level (proposed `low`) and a thinking-token allowance in the projection, whether the refusal code is a new D-8 code, and where the key lives (`.env.local`, gitignored, loaded only by `scripts/run.ts`).
+**Answered (D-40):** SDK exact 0.137.0; effort `low`; the projection allows `max_tokens` output per request; refusal → `PARSE_REFUSAL` (new D-8 code + GP golden); key in `.env.local`, loaded only by `scripts/run.ts`.
