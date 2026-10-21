@@ -16,6 +16,7 @@ export interface Policy {
   route_by_category: Record<string, string>;
   route_overrides: { when: { category?: string; priority?: string }; route: string }[];
   spam_floor: { category: string; priority: string };
+  audit_sample_bps: number;
 }
 
 export interface Decision {
