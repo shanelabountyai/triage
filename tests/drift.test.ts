@@ -6,13 +6,13 @@ import { driftReport } from '../src/io/drift.js';
 import { appendOverrides, readOverrides } from '../src/io/overrides.js';
 import { triageRun } from '../src/io/run.js';
 import type { Policy } from '../src/pipeline/decide.js';
-import { driftSignals, tvdBps, type DriftPolicy, type WindowStats } from '../src/pipeline/drift.js';
+import { driftSignals, tvdBps, windowStats, type DriftPolicy, type WindowStats } from '../src/pipeline/drift.js';
 
 const drift = JSON.parse(readFileSync('monitoring/drift.v1.json', 'utf8')) as DriftPolicy;
 const policy = JSON.parse(readFileSync('routing/policy.v1.json', 'utf8')) as Policy;
 const ws = (n: number, cat: Record<string, number>, pri: Record<string, number>, ...c: number[]): WindowStats => {
   const [escalated, humanQueue, lowConfA, unsupportedLang, resultsTotal, resultsFailed, humanTouched, overridden] = c as [number, number, number, number, number, number, number, number];
-  return { n, categoryCounts: cat, priorityCounts: pri, escalated, humanQueue, lowConfA, unsupportedLang, resultsTotal, resultsFailed, humanTouched, overridden };
+  return { n, categoryCounts: cat, priorityCounts: pri, escalated, humanQueue, lowConfA, unsupportedLang, resultsTotal, resultsFailed, humanTouched, reviewed: humanTouched, overridden };
 };
 
 describe('GD drift goldens (brief §10)', () => {
@@ -32,6 +32,18 @@ describe('GD drift goldens (brief §10)', () => {
   });
   it('GD-12 a window under min_window_items never fires', () => {
     expect(driftSignals(base, ws(50, { BUG: 50 }, { P3: 50 }, 50, 50, 50, 50, 50, 50, 50, 50), drift).some((s) => s.fired)).toBe(false);
+  });
+});
+
+describe('windowStats', () => {
+  it('D-37: an unreviewed human-touched ticket is outside the override-rate denominator', () => {
+    const row = (id: string, human_touched: boolean) => ({ ticket_id: id, path: 'A', final_tier: 'A', category: 'BUG', priority: 'P3',
+      route: 'ENGINEERING', needs_human: false, language: 'en', min_bps: 9000, flags: [], reasons: [], cost_pico_batch: '0',
+      cost_pico_standard: '0', human_touched, overridden: null, tier_a_min_bps: 9000 });
+    const rows = [row('T-1', true), row('T-2', true), row('T-3', true), row('T-4', false)];
+    const ovr = new Map([['T-1', { category: 'HOW_TO', priority: 'P3' }], ['T-4', { category: 'HOW_TO', priority: 'P3' }]]);
+    const w = windowStats(rows, ovr, policy);
+    expect([w.humanTouched, w.reviewed, w.overridden]).toEqual([3, 1, 1]);
   });
 });
 
@@ -64,7 +76,7 @@ describe('drift:report, batch 2 vs batch 1 (scripted, answer key as the person, 
         .map((r) => ({ run_id: row.run_id, ticket_id: r.ticket_id, ...key.get(r.ticket_id)!, by: 'answer-key', at: t })));
     }
     const r = driftReport({ baseline: ids[0]!, window: ids[1]!, ledgerPath, overridesPath });
-    expect([r.base.overridden, r.base.humanTouched, r.win.overridden, r.win.humanTouched]).toEqual([41, 287, 46, 272]);
+    expect([r.base.overridden, r.base.reviewed, r.base.humanTouched, r.win.overridden, r.win.reviewed, r.win.humanTouched]).toEqual([41, 287, 287, 46, 272, 272]);
     const ref = readFileSync('fixtures/samples/reference_pipeline.output.txt', 'utf8').split('\n');
     const at = ref.indexOf('  signal                              value     threshold  fired');
     const table = r.lines.indexOf('  signal                              value     threshold  fired');

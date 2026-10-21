@@ -12,7 +12,7 @@ export interface DriftPolicy {
 export interface WindowStats {
   n: number; categoryCounts: Record<string, number>; priorityCounts: Record<string, number>;
   escalated: number; humanQueue: number; lowConfA: number; unsupportedLang: number;
-  resultsTotal: number; resultsFailed: number; humanTouched: number; overridden: number;
+  resultsTotal: number; resultsFailed: number; humanTouched: number; reviewed: number; overridden: number;
 }
 export interface Signal { id: string; valueBps: number; thresholdBps: number; fired: boolean }
 /** A person's labels for one ticket (the latest override row wins). */
@@ -33,10 +33,11 @@ export function tvdBps(a: Record<string, number>, b: Record<string, number>): nu
 
 const count = (xs: string[]) => xs.reduce<Record<string, number>>((m, x) => ((m[x] = (m[x] ?? 0) + 1), m), {});
 
-/** One window's counts. An override counts only on a human-touched ticket whose category or priority the person changed (D-21). */
+/** One window's counts. The override rate is over reviewed tickets: human-touched ones with an override row (D-37), so an
+ * unreviewed backlog cannot dilute it; an override is a category or priority the person changed (D-21). */
 export function windowStats(rows: DecisionRow[], overrides: Map<string, Override>, policy: Policy): WindowStats {
   const thr = policy.escalate_to_tier_b_when.min_confidence_bps_below;
-  let escalated = 0, humanQueue = 0, lowConfA = 0, unsupportedLang = 0, resultsTotal = 0, resultsFailed = 0, humanTouched = 0, overridden = 0;
+  let escalated = 0, humanQueue = 0, lowConfA = 0, unsupportedLang = 0, resultsTotal = 0, resultsFailed = 0, humanTouched = 0, reviewed = 0, overridden = 0;
   for (const r of rows) {
     const esc = r.path.startsWith('A>B');
     escalated += +esc;
@@ -49,14 +50,16 @@ export function windowStats(rows: DecisionRow[], overrides: Map<string, Override
     if (!r.human_touched) continue;
     humanTouched++;
     const o = overrides.get(r.ticket_id);
-    overridden += +(o !== undefined && (o.category !== r.category || o.priority !== r.priority));
+    if (!o) continue;
+    reviewed++;
+    overridden += +(o.category !== r.category || o.priority !== r.priority);
   }
   return { n: rows.length, categoryCounts: count(rows.map((r) => r.category)), priorityCounts: count(rows.map((r) => r.priority)),
-    escalated, humanQueue, lowConfA, unsupportedLang, resultsTotal, resultsFailed, humanTouched, overridden };
+    escalated, humanQueue, lowConfA, unsupportedLang, resultsTotal, resultsFailed, humanTouched, reviewed, overridden };
 }
 
 const shares = (w: WindowStats): Record<string, number> => ({
-  OVERRIDE_RATE_DELTA: bps(w.overridden, w.humanTouched),
+  OVERRIDE_RATE_DELTA: bps(w.overridden, w.reviewed),
   ESCALATION_SHARE_DELTA: bps(w.escalated, w.n),
   HUMAN_QUEUE_SHARE_DELTA: bps(w.humanQueue, w.n),
   LOW_CONFIDENCE_SHARE_DELTA: bps(w.lowConfA, w.n),

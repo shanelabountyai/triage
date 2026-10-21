@@ -26,7 +26,7 @@ export function driftReport(o: DriftOptions) {
   const signals = driftSignals(base, win, drift);
   const lines = [
     `drift: ${o.window} window (n ${win.n}) vs ${o.baseline} baseline (n ${base.n}) (monitoring/drift.v1.json)`,
-    `  override rate: ${win.overridden}/${win.humanTouched} human-touched in the window, ${base.overridden}/${base.humanTouched} in the baseline`,
+    `  override rate: ${win.overridden}/${win.reviewed} reviewed (of ${win.humanTouched} human-touched) in the window, ${base.overridden}/${base.reviewed} (of ${base.humanTouched}) in the baseline`,
     '  signal                              value     threshold  fired',
     ...signals.map((s) => `  ${s.id.padEnd(34)} ${String(s.valueBps).padStart(6)} bps  ${String(s.thresholdBps).padStart(6)} bps  ${s.fired ? 'YES' : 'no'}`),
     `  ${signals.filter((s) => s.fired).length} of ${signals.length} fired${win.n < drift.min_window_items ? ` (window under ${drift.min_window_items} items never fires)` : ''}`,
