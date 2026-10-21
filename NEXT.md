@@ -1,8 +1,12 @@
 # NEXT
 
-## ▶ Next session: task 2.2. The `live` provider (Batches), tested against a fake client only
+## ▶ Next session: task 2.3. Projection and the two caps (D-19)
 
-Model: Opus 5.5 (D-40). 2.2 carries the byte-identity assert (non-negotiable 8), `PARSE_REFUSAL` with its GP golden (D-40 item 4), and the `TRIAGE_LIVE=1` + key refusal; no network in any test.
+Model: Opus 5.5 (money and caps; D-40). 2.3 wires `provider('live')` in `src/providers/index.ts`, which still throws `LIVE_NOT_WIRED`, to `liveFromEnv` (`src/providers/live.ts`) behind the projection. Use `MAX_TOKENS` (1024) as the output allowance per request (D-40 item 3), estimate input with `estTokens` (cache assumed to miss), and load `.env.local` in `scripts/run.ts` only (D-40 item 5; `process.loadEnvFile` is stdlib on Node 22).
+
+**2026-10-21: task 2.2 done (D-42).** `src/providers/live.ts`: `buildRequests`, `assertPrefixIdentical`, `liveProvider` (create → poll → stream results through the D-9 reader, keyed by `custom_id`), `liveFromEnv` (refuses without `TRIAGE_LIVE=1` and a key). `PARSE_REFUSAL` is in `tierResult`, with GP-09; the reader carries `stopReason`. Decisions taken by default, recorded in D-42: `max_tokens` 1024 as a constant until the next policy version; the schema is sent without `$comment`; user turn `Subject: …\n\n<body>`. `tests/live.test.ts` (fake client, no network): request shape, a one-byte change to the system or schema refuses, all four `result.type`s out of order, refusals. Two planted mutants (assert disabled, refusal check broken) each turn the tests red.
+
+Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 12 files, 67 tests passed · triage:eval 1,200 of 1,200 equal, stdout byte-identical to the reference, exit 0. Spend to date: **$0**.
 
 **2026-10-21: task 2.1 done (D-41).** `@anthropic-ai/sdk` exact 0.137.0 is the only runtime dependency (7 transitive packages, listed in D-41). `tests/lint.test.ts` gains an import-boundary block: `src/pipeline/` imports only `./*` and `node:crypto`, and `@anthropic-ai/` appears only under `src/providers/` (nothing imports it yet). A planted import fails both tests and `policy:lint`. The Phase 2 API facts hold in the 0.137.0 types (D-41). `npm audit --omit=dev` 0; the 6 full-audit findings are the pre-existing vitest 2.x dev chain, a separate decision if wanted.
 

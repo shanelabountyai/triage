@@ -40,7 +40,8 @@ function resultOf(o: unknown): BatchResult | string {
   const usage = usageOf(m['usage']);
   if (typeof usage === 'string') return usage;
   const text = m['content'].filter((b) => isObj(b) && b['type'] === 'text' && typeof b['text'] === 'string').map((b) => b['text']).join('');
-  return { customId, type, model: m['model'], text, usage };
+  const stopReason = typeof m['stop_reason'] === 'string' ? m['stop_reason'] : null;
+  return { customId, type, model: m['model'], text, usage, stopReason };
 }
 
 export function parseResults(text: string): { results: Map<string, BatchResult>; errors: ResultError[] } {

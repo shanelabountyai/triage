@@ -1,5 +1,5 @@
 // Where tier results come from (task 1.9). One type, three providers: `scripted` replays fixtures/,
-// `recorded` replays recordings/ (written by the Phase 2 recorder), `live` does not exist before Phase 2.
+// `recorded` replays recordings/ (written by the Phase 2 recorder), `live` (src/providers/live.ts) submits Batches.
 // The stub-behind-one-type pattern is from use-case-studio src/lib/kickoff/provider.ts (D-35).
 import { basename, dirname, join } from 'node:path';
 import type { Ticket } from '../io/tickets.js';
@@ -31,6 +31,7 @@ export function provider(name: ProviderName): Provider {
   switch (name) {
     case 'scripted': return replay((tier, p) => join(dirname(p), `scripted_tier${tier}_${stem(p)}`));
     case 'recorded': return replay((tier, p) => join('recordings', stem(p).replace(/\.jsonl$/, ''), `tier${tier}.jsonl`));
-    case 'live': return async () => { throw new Error('LIVE_NOT_AVAILABLE_IN_PHASE_1: the live provider arrives in Phase 2 (D-2); nothing was sent'); };
+    // live.ts exists (task 2.2) but triage:run cannot reach it until the D-19 caps check its projection (task 2.3)
+    case 'live': return async () => { throw new Error('LIVE_NOT_WIRED: triage:run reaches the live provider only once the caps land (task 2.3, D-19); nothing was sent'); };
   }
 }

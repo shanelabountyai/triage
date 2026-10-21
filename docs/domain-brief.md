@@ -109,7 +109,7 @@ What the numbers mean: 7500 is where, on the scripted dev split, delivered accur
 
 System prompt `prompts/classify.v1.md` (version in the file name; any edit bumps it, D-20). Output schema `schemas/triage.v1.json`: nine required keys, no nullable types, `additionalProperties: false`, enum compare case-insensitive. Structured output is requested with `output_config.format = {type: "json_schema", schema}` (structured-outputs docs, read 2026-10-19); numeric bounds are not in the API's supported schema subset, so 0..10000 is checked after parsing. Prefix caching needs ≥ 512 tokens on the 5.5 models (prompt-caching docs, read 2026-10-19); the prompt plus schema is about 1,316 tokens by the `bytes/4` estimate and Phase 2 confirms with `count_tokens`.
 
-Parse codes (D-8): `PARSE_JSON`, `PARSE_SHAPE`, `PARSE_MISSING:<key>`, `PARSE_EXTRA_KEY`, `PARSE_ENUM:<key>`, `PARSE_RANGE:<key>` (also catches a float or a bool where an integer belongs), `PARSE_TYPE:<key>`.
+Parse codes (D-8): `PARSE_JSON`, `PARSE_SHAPE`, `PARSE_MISSING:<key>`, `PARSE_EXTRA_KEY`, `PARSE_ENUM:<key>`, `PARSE_RANGE:<key>` (also catches a float or a bool where an integer belongs), `PARSE_TYPE:<key>`, `PARSE_REFUSAL` (`stop_reason: "refusal"`, D-40).
 
 ## 8. Cost model (`pricing/prices.v1.json`)
 
@@ -173,7 +173,7 @@ Each row was worked by hand from §5–§9 and is checked by `tools/golden_answe
 
 **GS screen:** GS-01 INJ-01 → `role_marker`, `override`, `label_directive` · GS-02 INJ-04 → `fake_tool_output` · GS-03 INJ-03 → `addressed_to_agent`, `label_directive` · GS-04 a clean billing ticket → nothing · GS-05 "This is a high priority for us: our clients cannot book." → nothing · GS-06 INJ-07 → `exfiltration` · GS-07 "pre-reviewed by the support lead" → `approval_claim`.
 
-**GP parse:** GP-01 `"billing"`, `"EN"`, `"none"` parse to BILLING, `en`, NONE · GP-02 prose → `PARSE_JSON` · GP-03 `"REFUND"` → `PARSE_ENUM:category` · GP-04 `10001` → `PARSE_RANGE:category_confidence_bps` · GP-05 no `reason` → `PARSE_MISSING:reason` · GP-06 an extra `route` key → `PARSE_EXTRA_KEY` · GP-07 `"needs_human": 0` → `PARSE_TYPE:needs_human` · GP-08 `9000.0` → `PARSE_RANGE:category_confidence_bps`.
+**GP parse:** GP-01 `"billing"`, `"EN"`, `"none"` parse to BILLING, `en`, NONE · GP-02 prose → `PARSE_JSON` · GP-03 `"REFUND"` → `PARSE_ENUM:category` · GP-04 `10001` → `PARSE_RANGE:category_confidence_bps` · GP-05 no `reason` → `PARSE_MISSING:reason` · GP-06 an extra `route` key → `PARSE_EXTRA_KEY` · GP-07 `"needs_human": 0` → `PARSE_TYPE:needs_human` · GP-08 `9000.0` → `PARSE_RANGE:category_confidence_bps` · GP-09 a `stop_reason: "refusal"` result, even one whose text parses → `PARSE_REFUSAL` (vitest only; the oracle does not model refusal).
 
 **GC cost** (pico-USD): GC-01 Haiku, standard, 100 input + 1,300 cache read + 80 output = 100×100,000 + 1,300×10,000 + 80×500,000 = **63,000,000** ($0.000063) · GC-02 same in a batch = **31,500,000** · GC-03 Sonnet, 1h write of 1,300 + 100 input + 80 output = 200,000,000 + 5,200,000,000 + 800,000,000 = **6,200,000,000** · GC-04 same as a 5m write = 200,000,000 + 3,250,000,000 + 800,000,000 = **4,250,000,000** · GC-05 Haiku with 100,001 input tokens uses the long-prompt row: 100,001 × 500,000 · GC-06 1,000 × GC-02 = $0.0315 → **3 cents** · GC-07 1,000 × GC-01 = $0.063 → **6 cents** · GC-08 exactly half a cent → 1 cent · GC-09 `claude-opus-4-1` → raises.
 

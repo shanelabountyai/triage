@@ -30,6 +30,12 @@ describe('GP parse goldens', () => {
     expect(fail({ ...good, needs_human: 0 })).toBe('PARSE_TYPE:needs_human');
     expect(fail(JSON.stringify(good).replace('"category_confidence_bps":9000', '"category_confidence_bps":9000.0'))).toBe('PARSE_RANGE:category_confidence_bps');
   });
+  it('GP-09 a refusal is PARSE_REFUSAL, even when its text would parse (D-40 item 4)', () => {
+    const line = (stop_reason: string) => JSON.stringify({ custom_id: 'r', result: { type: 'succeeded', message: {
+      model: 'm', stop_reason, content: [{ type: 'text', text: JSON.stringify(good) }], usage: { input_tokens: 1, output_tokens: 1 } } } });
+    expect(tierResult(parseResults(line('refusal')).results.get('r'), schema).failure).toBe('PARSE_REFUSAL');
+    expect(tierResult(parseResults(line('end_turn')).results.get('r'), schema).failure).toBe('');
+  });
   it('shape, bool-as-integer, bad language', () => {
     expect(fail('[1]')).toBe('PARSE_SHAPE');
     expect(fail({ ...good, priority_confidence_bps: true })).toBe('PARSE_RANGE:priority_confidence_bps');
