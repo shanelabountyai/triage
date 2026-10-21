@@ -1,8 +1,20 @@
 # NEXT
 
-## ▶ Next session: `go` starts task 1.12 (`docs/EVAL.md` and the CI gate)
+## ▶ Next session: Phase 1 gate review. `docs/phase-2-tasks.md` waits for Shane; do not start 2.1 until it is approved
 
-Model: Fable 5.1 (pinned, D-4); 1.7–1.11 ran on Opus 5.5 by choice.
+Model: Fable 5.1 (pinned, D-4).
+
+**2026-10-21: task 1.12 done, Phase 1 exit criteria met.** `docs/EVAL.md` pastes `npm run -s triage:eval 2>/dev/null` verbatim (scripted, designed error model, not a measurement; D-23), with the five D-26 hashes and the ten fixture hashes. 1,200 of 1,200 per-ticket decisions are equal, and stdout is byte-identical to the reference.
+- **Red run:** https://github.com/shanelabountyai/triage/actions/runs/39618261876. This was draft PR #4, which moved T from 7500 to 7000 on a throwaway branch; the PR is closed unmerged and the branch deleted. typecheck passed. policy:lint failed (D-26 hash), fixtures:check failed, npm test failed (7 of 11 files) and triage:eval failed (451 per-ticket differences).
+- **Green run:** https://github.com/shanelabountyai/triage/actions/runs/39618452718 (`ec415a2` on main, every step passed).
+- **Phase 2 plan:** `docs/phase-2-tasks.md` (2.1–2.11). The API facts in it were checked on 2026-10-21:
+  - Thinking is on by default on Haiku 5.5 and Sonnet 5.5, so effort has to be set and thinking tokens bill as output.
+  - `fallbacks` is rejected on Batches, so a refusal becomes a typed failure.
+  - The minimum cacheable prefix is 512 tokens, under the 1,316-token prefix.
+  - Usage carries `cache_creation.ephemeral_{5m,1h}_input_tokens`.
+- **Open for Shane before 2.1:** the SDK version pin, the effort level (proposed `low`), the thinking allowance in the projection, the refusal failure code, and where the key file lives.
+
+Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 11 files, 59 tests passed · triage:eval 1,200 tickets equal, exit 0 · CI green without a key. Spend to date: **$0**.
 
 **2026-10-20, task 1.11 done (D-38).** `src/eval/report.ts` (`evalReport`, `parseCsv`), `src/pipeline/evalmath.ts` (`prf`, `eceBps`), `fmtBps` in `num.ts`, `runTickets` also returns `tiers`, `scripts/eval.ts` real. `npm run triage:eval` stdout is byte-identical to `fixtures/samples/reference_pipeline.output.txt` (102 lines; scripted results, designed error model, not a measurement); stderr `per-ticket decisions: 1200 of 1200 equal`. Exits 1 on any per-ticket difference: a test moves T 7500 → 7000 in a temp copy and the diffs are non-empty. For 1.12: the throwaway-branch proof is the same edit to `routing/policy.v1.json`. That also breaks the D-26 hash, so `policy:lint`, `npm test` and `triage:eval` all go red; since D-39 every gate step runs after a failure, so the red run shows each one. CI triggers only on `main` pushes and pull requests, so the proof is a **draft PR** from the throwaway branch, closed unmerged afterwards; `docs/EVAL.md` can paste `npm run -s triage:eval 2>/dev/null` verbatim.
 
