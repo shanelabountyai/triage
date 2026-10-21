@@ -35,13 +35,15 @@ export const needsTierB = <T extends TicketText>(tickets: T[], ra: Map<string, B
 export function runTickets(tickets: TicketText[], ra: Map<string, BatchResult>, rb: Map<string, BatchResult>, c: RunConfig) {
   const tokens: Usage = { input: 0, cacheRead: 0, cacheCreation5m: 0, cacheCreation1h: 0, output: 0 };
   let costBatch = 0n;
+  const tiers = new Map<string, { a: TierResult; b: TierResult | null }>();
   const rows = tickets.map((t): DecisionRow => {
     const a = tierResult(ra.get(t.ticket_id), c.schema);
     const b = escalate(a, c.policy).escalate ? tierResult(rb.get(t.ticket_id), c.schema) : null;
     const d = decide(t.ticket_id, screenText(t), a, b, c.policy);
-    const tiers: [TierResult, string][] = [[a, c.policy.tiers.A.model], ...(b ? [[b, c.policy.tiers.B.model] as [TierResult, string]] : [])];
-    const cost = (batch: boolean) => tiers.reduce((s, [r, m]) => s + costPico(r.model ?? m, r.usage, batch, c.prices), 0n);
-    for (const [r] of tiers) for (const k of Object.keys(tokens) as (keyof Usage)[]) tokens[k] += r.usage?.[k] ?? 0;
+    tiers.set(t.ticket_id, { a, b });
+    const used: [TierResult, string][] = [[a, c.policy.tiers.A.model], ...(b ? [[b, c.policy.tiers.B.model] as [TierResult, string]] : [])];
+    const cost = (batch: boolean) => used.reduce((s, [r, m]) => s + costPico(r.model ?? m, r.usage, batch, c.prices), 0n);
+    for (const [r] of used) for (const k of Object.keys(tokens) as (keyof Usage)[]) tokens[k] += r.usage?.[k] ?? 0;
     const cb = cost(true);
     costBatch += cb;
     return {
@@ -52,5 +54,5 @@ export function runTickets(tickets: TicketText[], ra: Map<string, BatchResult>, 
       tier_a_min_bps: a.parsed ? minBps(a.parsed) : null,
     };
   });
-  return { rows, tokens, costPicoBatch: costBatch };
+  return { rows, tiers, tokens, costPicoBatch: costBatch };
 }

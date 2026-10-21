@@ -39,3 +39,10 @@ export function ceilDiv(num: bigint, den: bigint): bigint {
   if (num < 0n || den <= 0n) throw new RangeError(`ceilDiv: invalid ${num}/${den}`);
   return (num + den - 1n) / den;
 }
+
+/** Non-negative bps as a percent with two decimals (1912 → "19.12%"), by digits, never by float. */
+export function fmtBps(v: number): string {
+  if (!Number.isSafeInteger(v) || v < 0) throw new RangeError(`fmtBps: invalid ${v}`);
+  const s = String(v).padStart(3, '0');
+  return `${s.slice(0, -2)}.${s.slice(-2)}%`;
+}

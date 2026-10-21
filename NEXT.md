@@ -1,8 +1,12 @@
 # NEXT
 
-## ▶ Next session: `go` starts task 1.11 (`triage:eval`)
+## ▶ Next session: `go` starts task 1.12 (`docs/EVAL.md` and the CI gate)
 
-Model: Fable 5.1 (pinned, D-4); 1.7–1.10 ran on Opus 5.5 by choice.
+Model: Fable 5.1 (pinned, D-4); 1.7–1.11 ran on Opus 5.5 by choice.
+
+**2026-10-20, task 1.11 done (D-38).** `src/eval/report.ts` (`evalReport`, `parseCsv`), `src/pipeline/evalmath.ts` (`prf`, `eceBps`), `fmtBps` in `num.ts`, `runTickets` also returns `tiers`, `scripts/eval.ts` real. `npm run triage:eval` stdout is byte-identical to `fixtures/samples/reference_pipeline.output.txt` (102 lines; scripted results, designed error model, not a measurement); stderr `per-ticket decisions: 1200 of 1200 equal`. Exits 1 on any per-ticket difference: a test moves T 7500 → 7000 in a temp copy and the diffs are non-empty. For 1.12: the throwaway-branch proof is the same edit to `routing/policy.v1.json` (which also breaks the D-26 hash, so `policy:lint` goes red too; the red run will show both); `docs/EVAL.md` can paste `npm run -s triage:eval 2>/dev/null` verbatim.
+
+Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 11 files, 59 tests passed · triage:eval 1,200 tickets, output equal to the reference, exit 0. Spend to date: **$0**.
 
 **2026-10-20, task 1.10 done (D-36, D-37).** Override rate is over *reviewed* touched tickets (D-37); fixtures unchanged. `src/pipeline/drift.ts` (`tvdBps`, `windowStats`, `driftSignals`), `src/io/overrides.ts` (append-only, latest row wins, typed errors), `src/io/drift.ts` (`runDecisions`, `driftReport`), `scripts/drift-report.ts` real, `scripts/overrides-standin.ts` (O-6, fixtures only). New decision column `tier_a_min_bps`. `drift:report -- --baseline <run_id> --window <run_id>` on batch 2 vs 1 prints the brief §11 table line for line, 5 of 8 fired. For 1.11: `windowStats` takes an override map, so the eval can build it from the answer key directly (every touched ticket then counts as reviewed, so `reviewed = humanTouched` there) (the stand-in rows and the eval's key join are the same thing); the drift table lines in `driftReport` are already the reference format, but its header lines differ from the reference's (`drift: batch 2 window vs batch 1 baseline …`), so the eval prints its own header.
 
