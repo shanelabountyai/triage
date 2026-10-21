@@ -1,8 +1,12 @@
 # NEXT
 
-## ▶ Next session: task 2.1. Add `@anthropic-ai/sdk` at exact 0.137.0 (D-40), imported only under `src/providers/`
+## ▶ Next session: task 2.2. The `live` provider (Batches), tested against a fake client only
 
-Model: Opus 5.5, Shane's choice for Phase 2 (D-40). The D-4 pin is unchanged.
+Model: Opus 5.5 (D-40). 2.2 carries the byte-identity assert (non-negotiable 8), `PARSE_REFUSAL` with its GP golden (D-40 item 4), and the `TRIAGE_LIVE=1` + key refusal; no network in any test.
+
+**2026-10-21: task 2.1 done (D-41).** `@anthropic-ai/sdk` exact 0.137.0 is the only runtime dependency (7 transitive packages, listed in D-41). `tests/lint.test.ts` gains an import-boundary block: `src/pipeline/` imports only `./*` and `node:crypto`, and `@anthropic-ai/` appears only under `src/providers/` (nothing imports it yet). A planted import fails both tests and `policy:lint`. The Phase 2 API facts hold in the 0.137.0 types (D-41). `npm audit --omit=dev` 0; the 6 full-audit findings are the pre-existing vitest 2.x dev chain, a separate decision if wanted.
+
+Gate at this checkpoint: `npm ci` clean · typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 11 files, 61 tests passed · triage:eval 1,200 of 1,200 equal, stdout byte-identical to the reference, exit 0. Spend to date: **$0**.
 
 **2026-10-21: Phase 1 gate reviewed. The open questions are answered in D-40:** SDK exact 0.137.0 (1.0.0 came out the same day, so it waits about two weeks for a new D-entry); effort `low`; the 2.3 projection allows `max_tokens` output tokens per request; refusal becomes `PARSE_REFUSAL`, a new D-8 code with a GP golden (task 2.2); the key goes in `.env.local`, loaded only by `scripts/run.ts`. Deps change in 2.1, so check that `npm ci` is clean and that `policy:lint` still passes. Spend to date: **$0**.
 
