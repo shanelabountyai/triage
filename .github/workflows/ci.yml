@@ -14,6 +14,7 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Every gate step runs even after an earlier one fails, so one red run shows each check's verdict (D-39).
 jobs:
   ci:
     runs-on: ubuntu-latest
@@ -23,9 +24,15 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm run policy:lint
-      - run: npm run fixtures:check   # regenerates to a temp dir, compares sha256, runs the goldens; fails if fixtures/ moved
-      - run: npm test
-      - run: npm run triage:eval      # exits non-zero if any per-ticket decision differs from fixtures/decisions_batch{1,2}.csv
+      - id: install
+        run: npm ci
+      - if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run typecheck
+      - if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run policy:lint
+      - if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run fixtures:check   # regenerates to a temp dir, compares sha256, runs the goldens; fails if fixtures/ moved
+      - if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm test
+      - if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run triage:eval      # exits non-zero if any per-ticket decision differs from fixtures/decisions_batch{1,2}.csv
