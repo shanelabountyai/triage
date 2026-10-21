@@ -6,6 +6,7 @@ import { screen } from './screen.js';
 
 /** The fields of routing/policy.v1.json the policy reads (shape checked by POLICY_SCHEMA in lint). */
 export interface Policy {
+  labels: Record<'category' | 'priority' | 'route', string[]>;
   tiers: Record<'A' | 'B', { model: string }>;
   supported_languages: string[];
   escalate_to_tier_b_when: { min_confidence_bps_below: number; category_in: string[]; tier_a_failed: boolean };
