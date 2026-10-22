@@ -38,3 +38,11 @@ export function costPico(model: string, usage: Usage | null, batch: boolean, pri
 export function estTokens(text: string): number {
   return Number(ceilDiv(BigInt(new TextEncoder().encode(text).length), 4n));
 }
+
+/** CEILING, not a measurement (D-19, D-40 item 3): per request, the prefix is written to the 1h cache (the cache is
+ *  assumed to miss), the user turn is input by estTokens, and the whole max_tokens allowance is output. Batch prices. */
+export function projectPico(model: string, prefix: string, userTurns: string[], maxTokens: number, prices: Prices): bigint {
+  const write = estTokens(prefix);
+  return userTurns.reduce((s, u) => s + costPico(model,
+    { input: estTokens(u), cacheRead: 0, cacheCreation5m: 0, cacheCreation1h: write, output: maxTokens }, true, prices), 0n);
+}

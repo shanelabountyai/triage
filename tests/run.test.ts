@@ -47,9 +47,9 @@ describe('triage:run over batch 1 (scripted)', () => {
     await run(dir);
     await expect(run(dir)).rejects.toThrow(/EEXIST/);
   });
-  it('live throws LIVE_NOT_WIRED (until the 2.3 caps) and writes nothing', async () => {
+  it('live without the caps and a provider builder refuses and writes nothing (tests/caps.test.ts drives a live run)', async () => {
     const dir = tmp();
-    await expect(run(dir, 'live')).rejects.toThrow(/LIVE_NOT_WIRED/);
+    await expect(run(dir, 'live')).rejects.toThrow(/LIVE_ONLY_VIA_RUN/);
     expect(() => readFileSync(join(dir, 'runs.jsonl'))).toThrow(/ENOENT/);
   });
 });

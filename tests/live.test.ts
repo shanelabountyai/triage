@@ -80,11 +80,11 @@ describe('live provider (fake client)', () => {
     expect(f.calls.create).toHaveLength(0);
   });
 
-  it('refuses without TRIAGE_LIVE=1 and a key; triage:run cannot reach it before the caps (2.3)', async () => {
+  it('refuses without TRIAGE_LIVE=1 and a key; provider("live") is a stub outside triage:run', async () => {
     const c = { models, system, schema };
     expect(() => liveFromEnv({ ANTHROPIC_API_KEY: 'k' }, c)).toThrow(/LIVE_REFUSED: TRIAGE_LIVE=1/);
     expect(() => liveFromEnv({ TRIAGE_LIVE: 'true', ANTHROPIC_API_KEY: 'k' }, c)).toThrow(/LIVE_REFUSED: TRIAGE_LIVE=1/);
     expect(() => liveFromEnv({ TRIAGE_LIVE: '1' }, c)).toThrow(/LIVE_REFUSED: ANTHROPIC_API_KEY/);
-    await expect(provider('live')('A', tickets, 'unused')).rejects.toThrow(/LIVE_NOT_WIRED/);
+    await expect(provider('live')('A', tickets, 'unused')).rejects.toThrow(/LIVE_ONLY_VIA_RUN/);
   });
 });

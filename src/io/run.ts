@@ -1,18 +1,25 @@
 // triage:run (task 1.9, brief §4): intake → provider A → escalated set → provider B → pure run →
 // <out>/decisions.jsonl + one append-only row in the run ledger. The clock is injected (O-10 fields).
+// A live run (task 2.3) passes the D-19 caps: the latch first, then a projection before each tier's submit.
 import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import type { Prices } from '../pipeline/cost.js';
+import { costPico, projectPico, type Prices } from '../pipeline/cost.js';
 import type { Policy } from '../pipeline/decide.js';
 import { picoToCents } from '../pipeline/num.js';
+import type { BatchResult } from '../pipeline/parse.js';
 import { needsTierB, runTickets } from '../pipeline/run.js';
 import type { Schema } from '../pipeline/validate.js';
-import { provider, type ProviderName } from '../providers/index.js';
+import { provider, type Provider, type ProviderName } from '../providers/index.js';
+import { buildRequests, type LiveConfig, MAX_TOKENS } from '../providers/live.js';
+import { type Caps, headroomPico, ledgerState } from './caps.js';
 import { sha256File, recordedHashes } from './hash.js';
 import { readTickets } from './tickets.js';
 
 export interface RunOptions {
   inPath: string; provider: ProviderName; outDir: string; ledgerPath: string; auditSeed: number; now: () => string; root?: string;
+  /** live only: builds the provider (scripts/run.ts passes liveFromEnv; tests pass a fake client) */
+  live?: (c: Omit<LiveConfig, 'client'>) => Provider;
+  caps?: Caps; acknowledgeOverCap?: boolean;
 }
 
 export async function triageRun(o: RunOptions) {
@@ -23,27 +30,76 @@ export async function triageRun(o: RunOptions) {
   const started = o.now();
   const { tickets, errors } = readTickets(o.inPath);
   for (const e of errors) console.error(`intake line ${e.line}: ${e.code} ${e.detail}`);
-  const p = provider(o.provider);
-  const ra = await p('A', tickets, o.inPath);
-  const rb = await p('B', needsTierB(tickets, ra, c), o.inPath);
+  const models = { A: c.policy.tiers.A.model, B: c.policy.tiers.B.model };
+  const base = () => ({
+    run_id: `${started.replace(/[-:]/g, '')}-${o.provider}`, provider: o.provider,
+    input: o.inPath, input_sha256: sha256File(o.inPath), out: o.outDir, models,
+    hashes: Object.fromEntries(Object.keys(recordedHashes(join(root, 'docs/decisions.md'))).map((f) => [f, sha256File(join(root, f))])),
+    audit_seed: o.auditSeed,
+  });
+  const append = (row: object) => {
+    mkdirSync(dirname(o.ledgerPath), { recursive: true });
+    appendFileSync(o.ledgerPath, JSON.stringify(row) + '\n');
+  };
+
+  const live = o.provider === 'live';
+  const ledger = ledgerState(o.ledgerPath);
+  let spent = 0n; // real batch cost of the tiers this run has already got back
+  const p: Provider = live ? gated() : provider(o.provider);
+  function gated(): Provider {
+    if (!o.live || !o.caps) throw new Error('LIVE_ONLY_VIA_RUN: a live run needs the caps and a provider builder; nothing was sent');
+    if (ledger.overCap.length && !o.acknowledgeOverCap) {
+      throw new Error(`CAP_LATCHED: ${ledger.overCap.join(', ')} went OVER_CAP; pass --acknowledge-over-cap to run again (D-19); nothing was sent`);
+    }
+    const lc = { models, system: readFileSync(join(root, 'prompts/classify.v1.md'), 'utf8'), schema: c.schema as Record<string, unknown> };
+    const raw = o.live(lc), caps = o.caps;
+    return async (tier, ts, inPath) => {
+      if (!ts.length) return new Map<string, BatchResult>();
+      const reqs = buildRequests(tier, ts, lc);
+      const r0 = reqs[0]!.params; // the prefix is identical across the batch (non-negotiable 8; the provider asserts it)
+      const proj = projectPico(models[tier], r0.system[0]!.text + JSON.stringify(r0.output_config),
+        reqs.map((r) => r.params.messages[0]!.content), MAX_TOKENS, c.prices);
+      const room = headroomPico(caps, ledger.livePico, spent);
+      if (proj > room) {
+        throw new Error(`CAP_PROJECTION: tier ${tier}, ${ts.length} requests project ${picoToCents(proj)}¢ (ceiling: cache miss, ${MAX_TOKENS} output tokens each) `
+          + `over ${picoToCents(room > 0n ? room : 0n)}¢ left (run cap ${caps.runCents}¢, project cap ${caps.projectCents}¢, ledger live spend ${picoToCents(ledger.livePico)}¢); tier ${tier} was not sent`);
+      }
+      const res = await raw(tier, ts, inPath);
+      for (const r of res.values()) spent += costPico(r.model ?? models[tier], r.usage, true, c.prices);
+      return res;
+    };
+  }
+
+  let ra: Map<string, BatchResult>, rb: Map<string, BatchResult>;
+  try {
+    ra = await p('A', tickets, o.inPath);
+    rb = await p('B', needsTierB(tickets, ra, c), o.inPath);
+  } catch (e) {
+    // money already went out on tier A: the ledger must carry it, or the project cap undercounts
+    // ponytail: a batch created but never read back (poll or stream failure) is not counted; reconcile from the console
+    if (live && spent > 0n) {
+      const over = spent > headroomPico(o.caps!, ledger.livePico, 0n);
+      append({ ...base(), tickets: 0, intake_errors: errors.length, tokens: null, cost_pico_batch: String(spent), cost_cents: picoToCents(spent),
+        cap_status: over ? 'OVER_CAP' : 'INCOMPLETE', error: (e as Error).message, acknowledges: o.acknowledgeOverCap ? ledger.overCap : [],
+        started_at: started, finished_at: o.now(), submitted_at: null, completed_at: null, latency_s_p50: null, latency_s_p95: null });
+    }
+    throw e;
+  }
   const { rows, tokens, costPicoBatch } = runTickets(tickets, ra, rb, c);
 
   mkdirSync(o.outDir, { recursive: true });
   writeFileSync(join(o.outDir, 'decisions.jsonl'), rows.map((r) => JSON.stringify(r) + '\n').join(''), { flag: 'wx' });
   const finished = o.now();
   const row = {
-    run_id: `${started.replace(/[-:]/g, '')}-${o.provider}`, provider: o.provider,
-    input: o.inPath, input_sha256: sha256File(o.inPath), out: o.outDir,
-    models: { A: c.policy.tiers.A.model, B: c.policy.tiers.B.model },
-    hashes: Object.fromEntries(Object.keys(recordedHashes(join(root, 'docs/decisions.md'))).map((f) => [f, sha256File(join(root, f))])),
-    audit_seed: o.auditSeed, tickets: rows.length, intake_errors: errors.length,
+    ...base(), tickets: rows.length, intake_errors: errors.length,
     tokens: { input: tokens.input, cache_read: tokens.cacheRead, cache_write_5m: tokens.cacheCreation5m, cache_write_1h: tokens.cacheCreation1h, output: tokens.output },
     cost_pico_batch: String(costPicoBatch), cost_cents: picoToCents(costPicoBatch),
-    cap_status: 'n/a', // replays spend nothing; the D-19 caps arrive with the live provider in Phase 2
+    // replays spend nothing (n/a); a live run is judged on its real cost against both caps (D-19)
+    cap_status: !live ? 'n/a' : costPicoBatch > headroomPico(o.caps!, ledger.livePico, 0n) ? 'OVER_CAP' : 'OK',
+    ...(live ? { acknowledges: o.acknowledgeOverCap ? ledger.overCap : [] } : {}),
     started_at: started, finished_at: finished,
     submitted_at: null, completed_at: null, latency_s_p50: null, latency_s_p95: null, // O-10: measured from Phase 2
   };
-  mkdirSync(dirname(o.ledgerPath), { recursive: true });
-  appendFileSync(o.ledgerPath, JSON.stringify(row) + '\n');
+  append(row);
   return { rows, row };
 }

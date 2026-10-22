@@ -31,7 +31,7 @@ export function provider(name: ProviderName): Provider {
   switch (name) {
     case 'scripted': return replay((tier, p) => join(dirname(p), `scripted_tier${tier}_${stem(p)}`));
     case 'recorded': return replay((tier, p) => join('recordings', stem(p).replace(/\.jsonl$/, ''), `tier${tier}.jsonl`));
-    // live.ts exists (task 2.2) but triage:run cannot reach it until the D-19 caps check its projection (task 2.3)
-    case 'live': return async () => { throw new Error('LIVE_NOT_WIRED: triage:run reaches the live provider only once the caps land (task 2.3, D-19); nothing was sent'); };
+    // only triageRun builds the live provider, behind the D-19 projection (task 2.3); the eval never reaches it
+    case 'live': return async () => { throw new Error('LIVE_ONLY_VIA_RUN: the live provider is reached only through triage:run, behind the D-19 caps; nothing was sent'); };
   }
 }
