@@ -23,7 +23,7 @@ function fake(output_tokens: number, bps = 9000) {
       for (const r of sent.at(-1)!) yield { custom_id: r.custom_id, result: { type: 'succeeded', message: { model: r.params.model, stop_reason: 'end_turn',
         content: [{ type: 'text', text: label(bps) }], usage: { input_tokens: 40, output_tokens, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } } } };
     })(),
-  } } };
+  } }, models: { list: () => (async function* () { yield { id: 'claude-haiku-5-5' }; yield { id: 'claude-sonnet-5-5' }; })() } };
   return { client, sent };
 }
 

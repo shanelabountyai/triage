@@ -14,6 +14,14 @@ export interface BatchClient {
     retrieve(id: string): PromiseLike<{ id: string; processing_status: string }>;
     results(id: string): PromiseLike<AsyncIterable<unknown>>;
   } };
+  models: { list(): AsyncIterable<{ id: string }> };
+}
+
+/** D-47: both policy model ids must be listed before anything is sent; names every missing id. */
+export async function assertModelsListed(client: BatchClient, models: Record<Tier, string>): Promise<void> {
+  const want = new Set(Object.values(models));
+  for await (const m of client.models.list()) want.delete(m.id);
+  if (want.size) throw new Error(`MODEL_NOT_LISTED: ${[...want].join(', ')}; nothing was sent`);
 }
 
 export interface BatchRequest {
@@ -71,8 +79,10 @@ export function assertPrefixIdentical(requests: BatchRequest[]): void {
 
 export function liveProvider(c: LiveConfig): Provider {
   const sleep = c.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
+  let listed: Promise<void> | undefined; // one list call per provider, before the first submit
   return async (tier, tickets) => {
     if (!tickets.length) return new Map<string, BatchResult>();
+    await (listed ??= assertModelsListed(c.client, c.models));
     const requests = buildRequests(tier, tickets, c);
     assertPrefixIdentical(requests);
     const b = c.client.messages.batches;

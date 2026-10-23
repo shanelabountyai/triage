@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { tierResult } from '../src/pipeline/parse.js';
 import type { Schema } from '../src/pipeline/validate.js';
-import { assertPrefixIdentical, type BatchClient, type BatchRequest, buildRequests, liveFromEnv, liveProvider, MAX_TOKENS } from '../src/providers/live.js';
+import { assertModelsListed, assertPrefixIdentical, type BatchClient, type BatchRequest, buildRequests, liveFromEnv, liveProvider, MAX_TOKENS } from '../src/providers/live.js';
 import { provider } from '../src/providers/index.js';
 import type { Ticket } from '../src/io/tickets.js';
 
@@ -17,8 +17,8 @@ const usage = { input_tokens: 20, output_tokens: 80, cache_read_input_tokens: 13
 const msg = (stop_reason: string) => ({ type: 'succeeded', message: { model: models.A, stop_reason, content: [{ type: 'text', text: good }], usage } });
 
 /** Records every call; results come back out of submission order, one per result.type. */
-function fake(statuses = ['in_progress', 'in_progress', 'ended']) {
-  const calls: { create: BatchRequest[][]; retrieve: number; sleeps: number[] } = { create: [], retrieve: 0, sleeps: [] };
+function fake(statuses = ['in_progress', 'in_progress', 'ended'], listed = [models.A, models.B, 'claude-fable-5-1']) {
+  const calls: { create: BatchRequest[][]; retrieve: number; sleeps: number[]; list: number } = { create: [], retrieve: 0, sleeps: [], list: 0 };
   const lines = [
     { custom_id: 'T5', result: msg('refusal') },
     { custom_id: 'T3', result: { type: 'expired' } },
@@ -30,7 +30,7 @@ function fake(statuses = ['in_progress', 'in_progress', 'ended']) {
     create: async (b) => { calls.create.push(b.requests); return { id: 'msgbatch_fake' }; },
     retrieve: async (id) => ({ id, processing_status: statuses[Math.min(calls.retrieve++, statuses.length - 1)]! }),
     results: async () => (async function* () { yield* lines; })(),
-  } } };
+  }, }, models: { list: () => { calls.list++; return (async function* () { for (const id of listed) yield { id }; })(); } } };
   return { client, calls, sleep: async (ms: number) => { calls.sleeps.push(ms); } };
 }
 
@@ -72,6 +72,18 @@ describe('live provider (fake client)', () => {
     expect(Object.fromEntries(tickets.map((t) => [t.ticket_id, tierResult(res.get(t.ticket_id), s).failure]))).toEqual(
       { T1: '', T2: 'errored', T3: 'expired', T4: 'canceled', T5: 'PARSE_REFUSAL' });
     expect(res.get('T1')?.usage).toEqual({ input: 20, cacheRead: 1316, cacheCreation5m: 0, cacheCreation1h: 0, output: 80 });
+  });
+
+  it('model id check: a missing id refuses before any submit, naming it (D-47)', async () => {
+    const f = fake(undefined, [models.A]);
+    await expect(assertModelsListed(f.client, models)).rejects.toThrow(/MODEL_NOT_LISTED: claude-sonnet-5-5;/);
+    const run = liveProvider({ client: f.client, models, system, schema, sleep: f.sleep, pollMs: 5 });
+    await expect(run('A', tickets, 'unused')).rejects.toThrow(/MODEL_NOT_LISTED: claude-sonnet-5-5/);
+    expect(f.calls.create).toHaveLength(0);
+    const g = fake();
+    const ok = liveProvider({ client: g.client, models, system, schema, sleep: g.sleep, pollMs: 5 });
+    await ok('A', tickets, 'unused'); await ok('B', tickets, 'unused');
+    expect(g.calls.list).toBe(1);
   });
 
   it('no tickets, no batch', async () => {

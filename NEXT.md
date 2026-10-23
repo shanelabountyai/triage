@@ -1,6 +1,10 @@
 # NEXT
 
-## ▶ Next session: task 2.6 (`docs/phase-2-tasks.md`)
+## ▶ Next session: task 2.7 (`docs/phase-2-tasks.md`)
+
+**2026-10-23: task 2.6 done (D-47).** `assertModelsListed` runs once per live provider before the first submit; a missing O-1 id throws `MODEL_NOT_LISTED` naming it, with 0 requests sent. `BatchClient` gains `models.list()`; the three fake clients got it. One planted mutant (check removed) turns `tests/live.test.ts` red.
+
+Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 14 files, 82 tests passed · triage:eval 1,200 of 1,200 equal, exit 0. Spend to date: **$0**.
 
 **2026-10-23: task 2.5 done (D-46).** The live run records each tier to `recordings/<name>/tier{A,B}.jsonl` as it arrives, plus `meta.json`; the ledger row carries `submitted_at`, `completed_at`, `latency_s_p50/p95` (one sample per tier batch). Existing recording → `RECORDING_EXISTS` before anything is sent. A replay of the recording gives byte-identical `decisions.jsonl` (test, fake client). `tests/caps.test.ts` now uses a temp root so no test writes into the repo's `recordings/`.
 
