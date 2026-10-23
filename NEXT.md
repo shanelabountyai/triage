@@ -1,8 +1,14 @@
 # NEXT
 
-## ▶ Next session: task 2.4. Usage → cost, real kinds (`docs/phase-2-tasks.md`)
+## ▶ Next session: task 2.5. Recorder (`docs/phase-2-tasks.md`)
 
-Model: Opus 5.5 (money path). **2026-10-23: the run cap default is 300¢ (D-44, Shane's choice).** Both batches fit the D-43 ceiling (259¢ and 224¢); the project cap stays 1500¢. Restore note in D-44.
+Model: Sonnet 5.5 likely fits (file layout + meta.json, no money logic); Opus if the latency fields touch the ledger's cap math.
+
+**2026-10-23: task 2.4 done (D-45).** The reader read `null` cache counters (the real SDK shape) as malformed, so every live line would have been `RESULT_SHAPE`; `null` now reads as 0. A cache write without the 5m/1h split is now a typed error rather than booked as 5m (it was cheaper than the 1h we request). Thinking tokens are already inside `output_tokens`. `tests/cost.test.ts` gains 4 tests on hand-written real-shape usage (1h write 212,600,000 pico; null-counter read 33,080,000); three planted mutants (1h priced as 5m, null rejected, 5m guess restored) each turn it red. Fixtures unchanged.
+
+Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 13 files, 78 tests passed · triage:eval 1,200 of 1,200 equal, stdout byte-identical to the reference, exit 0. Spend to date: **$0**.
+
+**2026-10-23: the run cap default is 300¢ (D-44, Shane's choice).** Both batches fit the D-43 ceiling (259¢ and 224¢); the project cap stays 1500¢. Restore note in D-44.
 
 **2026-10-22: task 2.3 done (D-43).** `projectPico` (ceiling: 1h write on the prefix, `estTokens` input, 1024 output, batch prices) in `src/pipeline/cost.ts`; `src/io/caps.ts` (`capsFromEnv`, `ledgerState` counting live rows only, `headroomPico`); `triageRun` runs the latch, then a projection before each tier's submit, then sets `cap_status` OK/OVER_CAP from real usage, and appends an INCOMPLETE row if anything fails after tier A spent. `triage:run --provider live` is wired through `liveFromEnv`; `--acknowledge-over-cap` added; `.env.local` loaded for live only (it does not exist yet). `provider('live')` is the stub `LIVE_ONLY_VIA_RUN`, so the eval cannot spend. `tests/caps.test.ts`: 7 tests; four planted mutants each turn it red. CLI smoke: `--provider live` without `TRIAGE_LIVE` → `LIVE_REFUSED`, exit 1, no ledger row.
 

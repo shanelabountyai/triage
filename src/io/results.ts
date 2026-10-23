@@ -1,6 +1,6 @@
 // Message Batches results reader (D-9). One shape for scripted, recorded and live results. A malformed
 // line is a typed error, not a guess: cost is computed from these usage fields, so none is defaulted
-// except the cache counters the API omits when no cache was touched.
+// except the cache counters, which the API omits or sends as null when no cache was touched (D-45).
 import { readFileSync } from 'node:fs';
 import type { BatchResult, Usage } from '../pipeline/parse.js';
 
@@ -10,7 +10,7 @@ export interface ResultError { line: number; code: ResultCode; detail: string }
 const TYPES = new Set(['succeeded', 'errored', 'expired', 'canceled']);
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const count = (v: unknown, dflt?: number): number | null =>
-  v === undefined && dflt !== undefined ? dflt : Number.isSafeInteger(v) && (v as number) >= 0 ? (v as number) : null;
+  (v === undefined || v === null) && dflt !== undefined ? dflt : Number.isSafeInteger(v) && (v as number) >= 0 ? (v as number) : null;
 
 function usageOf(u: unknown): Usage | string {
   if (!isObj(u)) return 'usage is not an object';
@@ -20,7 +20,11 @@ function usageOf(u: unknown): Usage | string {
   const created = count(u['cache_creation_input_tokens'], 0);
   if (input === null || output === null || cacheRead === null || created === null) return 'usage token count missing or not a non-negative integer';
   const cc = u['cache_creation'];
-  if (cc === undefined) return { input, cacheRead, cacheCreation5m: created, cacheCreation1h: 0, output };
+  if (cc === undefined || cc === null) {
+    // Without the split the TTL of a write is unknown, and 1h costs more than 5m: never guess a price.
+    if (created !== 0) return 'cache_creation_input_tokens without usage.cache_creation';
+    return { input, cacheRead, cacheCreation5m: 0, cacheCreation1h: 0, output };
+  }
   if (!isObj(cc)) return 'usage.cache_creation is not an object';
   const w5 = count(cc['ephemeral_5m_input_tokens'], 0);
   const w1 = count(cc['ephemeral_1h_input_tokens'], 0);

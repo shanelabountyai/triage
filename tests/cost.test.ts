@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { readResults } from '../src/io/results.js';
+import { parseResults, readResults } from '../src/io/results.js';
 import { readTickets } from '../src/io/tickets.js';
 import { costPico, estTokens, priceRow, type Prices } from '../src/pipeline/cost.js';
 import { escalate, type Policy } from '../src/pipeline/decide.js';
@@ -36,6 +36,38 @@ describe('GC cost goldens', () => {
   });
   it('estTokens is ceil(utf-8 bytes / 4)', () => {
     expect([estTokens(''), estTokens('abcd'), estTokens('abcde'), estTokens('é')]).toEqual([0, 1, 2, 1]);
+  });
+});
+
+// Task 2.4: usage as the API sends it (SDK 0.137.0 `Usage`: cache counters `number | null`, extra fields), read by
+// the D-9 reader and priced at batch rates. Expected values by hand from pricing/prices.v1.json (pico per token).
+describe('GC real usage shape (2.4)', () => {
+  const line = (id: string, model: string, usage: object) => JSON.stringify({ custom_id: id, result: { type: 'succeeded',
+    message: { model, stop_reason: 'end_turn', content: [{ type: 'text', text: '{}' }], usage } } });
+  const extra = { inference_geo: 'us', server_tool_use: null, service_tier: 'batch', speed: null };
+  const { results, errors } = parseResults([
+    // first request writes the prefix to the 1h cache; 180 of the 300 output tokens are thinking, billed as output
+    line('w', 'claude-haiku-5-5', { ...extra, input_tokens: 120, output_tokens: 300, output_tokens_details: { thinking_tokens: 180 },
+      cache_read_input_tokens: 0, cache_creation_input_tokens: 1316, cache_creation: { ephemeral_5m_input_tokens: 0, ephemeral_1h_input_tokens: 1316 } }),
+    line('r', 'claude-haiku-5-5', { ...extra, input_tokens: 80, output_tokens: 90, output_tokens_details: null,
+      cache_read_input_tokens: 1316, cache_creation_input_tokens: null, cache_creation: null }),
+    line('x', 'claude-haiku-5-5', { ...extra, input_tokens: 80, output_tokens: 90, cache_read_input_tokens: null,
+      cache_creation_input_tokens: 1316, cache_creation: null }),
+    line('u', 'claude-haiku-5-5-20261001', { ...extra, input_tokens: 1, output_tokens: 1 }),
+  ].join('\n'));
+  const cost = (id: string) => costPico(results.get(id)!.model!, results.get(id)!.usage, true, prices);
+  it('a 1h write: (120×100,000 + 1,316×200,000 + 300×500,000) ÷ 2', () => {
+    expect(results.get('w')?.usage).toEqual({ input: 120, cacheRead: 0, cacheCreation5m: 0, cacheCreation1h: 1316, output: 300 });
+    expect(cost('w')).toBe(212_600_000n); // priced as a 5m write it would be 163,250,000
+  });
+  it('a cache read with null creation counters: (80×100,000 + 1,316×10,000 + 90×500,000) ÷ 2', () => {
+    expect(cost('r')).toBe(33_080_000n);
+  });
+  it('a write without the 5m/1h split is a typed error, not a guessed TTL', () => {
+    expect(errors).toEqual([{ line: 3, code: 'RESULT_SHAPE', detail: 'cache_creation_input_tokens without usage.cache_creation' }]);
+  });
+  it('an unknown model id throws', () => {
+    expect(() => cost('u')).toThrow(/COST_UNKNOWN_MODEL/);
   });
 });
 
