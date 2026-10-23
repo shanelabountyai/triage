@@ -21,16 +21,16 @@ const replay = (file: (tier: Tier, inPath: string) => string): Provider => async
 };
 
 /** fixtures/tickets_batch1.jsonl → fixtures/scripted_tier{A,B}_batch1.jsonl */
-function stem(inPath: string): string {
+export function stem(inPath: string): string {
   const m = /^tickets_(.+)$/.exec(basename(inPath));
   if (!m) throw new Error(`replay input must be named tickets_<name>.jsonl, got ${basename(inPath)}`);
   return m[1]!;
 }
 
-export function provider(name: ProviderName): Provider {
+export function provider(name: ProviderName, root = '.'): Provider {
   switch (name) {
     case 'scripted': return replay((tier, p) => join(dirname(p), `scripted_tier${tier}_${stem(p)}`));
-    case 'recorded': return replay((tier, p) => join('recordings', stem(p).replace(/\.jsonl$/, ''), `tier${tier}.jsonl`));
+    case 'recorded': return replay((tier, p) => join(root, 'recordings', stem(p).replace(/\.jsonl$/, ''), `tier${tier}.jsonl`));
     // only triageRun builds the live provider, behind the D-19 projection (task 2.3); the eval never reaches it
     case 'live': return async () => { throw new Error('LIVE_ONLY_VIA_RUN: the live provider is reached only through triage:run, behind the D-19 caps; nothing was sent'); };
   }

@@ -33,7 +33,12 @@ export interface LiveConfig {
   schema: Record<string, unknown>; // schemas/triage.v1.json
   sleep?: (ms: number) => Promise<void>;
   pollMs?: number;
+  clock?: () => number; // epoch ms; injected so a test fixes the latency
+  /** called once per tier with the raw result lines, as soon as the batch is read back (the recorder, task 2.5) */
+  onBatch?: (b: BatchInfo) => void;
 }
+
+export interface BatchInfo { tier: Tier; batchId: string; requests: number; submittedMs: number; completedMs: number; lines: string[] }
 
 // D-42: the 2.3 projection allows this many output tokens per request (D-40 item 3).
 export const MAX_TOKENS = 1024;
@@ -71,10 +76,14 @@ export function liveProvider(c: LiveConfig): Provider {
     const requests = buildRequests(tier, tickets, c);
     assertPrefixIdentical(requests);
     const b = c.client.messages.batches;
+    const clock = c.clock ?? Date.now;
+    const submittedMs = clock();
     const { id } = await b.create({ requests });
     while ((await b.retrieve(id)).processing_status !== 'ended') await sleep(c.pollMs ?? 60_000);
     const lines: string[] = [];
+    const completedMs = clock();
     for await (const r of await b.results(id)) lines.push(JSON.stringify(r));
+    c.onBatch?.({ tier, batchId: id, requests: requests.length, submittedMs, completedMs, lines });
     const { results, errors } = parseResults(lines.join('\n'));
     if (errors.length) throw new Error(`batch ${id}: ${errors.length} bad result line(s), first: ${errors[0]!.code} ${errors[0]!.detail}`);
     const ids = new Set(tickets.map((t) => t.ticket_id));

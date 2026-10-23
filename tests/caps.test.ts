@@ -1,5 +1,5 @@
 // Task 2.3: the D-19 caps around a live run, driven by a fake Batches client. Nothing here reaches the network (D-2).
-import { appendFileSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -29,12 +29,17 @@ function fake(output_tokens: number, bps = 9000) {
 
 function setup() {
   const dir = mkdtempSync(join(tmpdir(), 'triage-caps-'));
-  const inPath = join(dir, 'tickets_t.jsonl');
-  writeFileSync(inPath, readFileSync('fixtures/tickets_batch1.jsonl', 'utf8').split('\n').slice(0, 5).join('\n') + '\n');
+  const input = join(dir, 'tickets_in.jsonl');
+  writeFileSync(input, readFileSync('fixtures/tickets_batch1.jsonl', 'utf8').split('\n').slice(0, 5).join('\n') + '\n');
+  // the recorder writes under <root>/recordings, so the run gets a temp copy of the policy files, never the repo's
+  for (const d of ['routing', 'pricing', 'schemas', 'prompts', 'monitoring']) cpSync(d, join(dir, d), { recursive: true });
+  mkdirSync(join(dir, 'docs')); cpSync('docs/decisions.md', join(dir, 'docs/decisions.md'));
   let n = 0;
   const run = (f: ReturnType<typeof fake>, caps: { runCents: number; projectCents: number }, acknowledgeOverCap = false) => {
     n++;
-    return triageRun({ inPath, provider: 'live', outDir: join(dir, `out${n}`), ledgerPath: join(dir, 'runs.jsonl'), auditSeed: 20261019,
+    const inPath = join(dir, `tickets_t${n}.jsonl`); // one recording per run: a recording is never overwritten
+    cpSync(input, inPath);
+    return triageRun({ inPath, root: dir, provider: 'live', outDir: join(dir, `out${n}`), ledgerPath: join(dir, 'runs.jsonl'), auditSeed: 20261019,
       now: () => `2026-10-22T10:00:0${n}.000Z`, caps, acknowledgeOverCap,
       live: (c) => liveProvider({ ...c, client: f.client, sleep: async () => {} }) });
   };

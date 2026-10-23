@@ -1,8 +1,10 @@
 # NEXT
 
-## ▶ Next session: task 2.5. Recorder (`docs/phase-2-tasks.md`)
+## ▶ Next session: task 2.6 (`docs/phase-2-tasks.md`)
 
-Model: Sonnet 5.5 likely fits (file layout + meta.json, no money logic); Opus if the latency fields touch the ledger's cap math.
+**2026-10-23: task 2.5 done (D-46).** The live run records each tier to `recordings/<name>/tier{A,B}.jsonl` as it arrives, plus `meta.json`; the ledger row carries `submitted_at`, `completed_at`, `latency_s_p50/p95` (one sample per tier batch). Existing recording → `RECORDING_EXISTS` before anything is sent. A replay of the recording gives byte-identical `decisions.jsonl` (test, fake client). `tests/caps.test.ts` now uses a temp root so no test writes into the repo's `recordings/`.
+
+Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 14 files, 81 tests passed · triage:eval 1,200 of 1,200 equal, stdout byte-identical to the reference, exit 0. Spend to date: **$0**.
 
 **2026-10-23: task 2.4 done (D-45).** The reader read `null` cache counters (the real SDK shape) as malformed, so every live line would have been `RESULT_SHAPE`; `null` now reads as 0. A cache write without the 5m/1h split is now a typed error rather than booked as 5m (it was cheaper than the 1h we request). Thinking tokens are already inside `output_tokens`. `tests/cost.test.ts` gains 4 tests on hand-written real-shape usage (1h write 212,600,000 pico; null-counter read 33,080,000); three planted mutants (1h priced as 5m, null rejected, 5m guess restored) each turn it red. Fixtures unchanged.
 

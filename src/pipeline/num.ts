@@ -46,3 +46,10 @@ export function fmtBps(v: number): string {
   const s = String(v).padStart(3, '0');
   return `${s.slice(0, -2)}.${s.slice(-2)}%`;
 }
+
+/** Nearest-rank percentile of integers (p in 1..100): the value at rank ceil(p·n/100). No interpolation, so no float. */
+export function percentile(xs: number[], p: number): number | null {
+  if (!xs.length) return null;
+  const s = [...xs].sort((a, b) => a - b);
+  return s[Math.max(0, Number(ceilDiv(BigInt(p * s.length), 100n)) - 1)]!;
+}
