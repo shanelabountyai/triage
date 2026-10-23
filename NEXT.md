@@ -2,7 +2,7 @@
 
 ## ▶ Next session: task 2.4. Usage → cost, real kinds (`docs/phase-2-tasks.md`)
 
-Model: Opus 5.5 (money path). **Open for Shane before 2.7 (first recordings):** the run-cap value. At the D-19 defaults the D-40 ceiling refuses both batches (batch 1: A 26¢ + B 233¢ = 259¢; batch 2: 19¢ + 205¢ = 224¢; cap 200¢), and per-tier checking would send A and then refuse B. The answer goes in a new D-entry.
+Model: Opus 5.5 (money path). **2026-10-23: the run cap default is 300¢ (D-44, Shane's choice).** Both batches fit the D-43 ceiling (259¢ and 224¢); the project cap stays 1500¢. Restore note in D-44.
 
 **2026-10-22: task 2.3 done (D-43).** `projectPico` (ceiling: 1h write on the prefix, `estTokens` input, 1024 output, batch prices) in `src/pipeline/cost.ts`; `src/io/caps.ts` (`capsFromEnv`, `ledgerState` counting live rows only, `headroomPico`); `triageRun` runs the latch, then a projection before each tier's submit, then sets `cap_status` OK/OVER_CAP from real usage, and appends an INCOMPLETE row if anything fails after tier A spent. `triage:run --provider live` is wired through `liveFromEnv`; `--acknowledge-over-cap` added; `.env.local` loaded for live only (it does not exist yet). `provider('live')` is the stub `LIVE_ONLY_VIA_RUN`, so the eval cannot spend. `tests/caps.test.ts`: 7 tests; four planted mutants each turn it red. CLI smoke: `--provider live` without `TRIAGE_LIVE` → `LIVE_REFUSED`, exit 1, no ledger row.
 
