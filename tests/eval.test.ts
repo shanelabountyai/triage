@@ -56,6 +56,14 @@ describe('triage:eval (recorded, D-49)', () => {
     expect(a.lines.filter((l) => l.startsWith('recording: run ') && l.endsWith('prompt, schema and model ids current'))).toHaveLength(2);
   }, 30_000);
 
+  it('marks sweep rows above the recorded T as n/a instead of counting unsent tier-B requests as failures', async () => {
+    const { lines } = await evalReport('recorded');
+    const sweep = lines.filter((l) => /^  \d{4} /.test(l));
+    expect(sweep).toHaveLength(8);
+    expect(sweep.slice(0, 4).every((l) => !l.includes('n/a'))).toBe(true);
+    expect(sweep.slice(4).every((l) => / escalated tickets have no recorded tier-B result$/.test(l))).toBe(true);
+  }, 30_000);
+
   it('reports a per-ticket difference when a committed decision is edited', async () => {
     const root = mkdtempSync(join(tmpdir(), 'triage-eval-rec-'));
     for (const d of ['fixtures', 'routing', 'pricing', 'schemas', 'monitoring', 'prompts', 'recordings']) cpSync(d, join(root, d), { recursive: true });

@@ -211,7 +211,13 @@ export async function evalReport(providerName: ProviderName, root = '.') {
     const dev = split(runTickets(b1.tickets, b1.ra, b1.rb, at).rows, 'dev');
     const m = dev.length, esc = dev.filter((r) => r.path.startsWith('A>B')).length;
     const auto = dev.filter((r) => !r.needs_human), hq = m - auto.length;
-    P(`  ${String(T).padEnd(5)} ${String(esc).padStart(4)} (${pct(esc, m).padStart(7)})   ${fmtBps(accOf(auto)).padStart(7)} of ${String(auto.length).padStart(3)}        ${String(hq).padStart(4)} (${pct(hq, m).padStart(7)})   ${String(per1k(sum(dev), m)).padStart(6)}`);
+    // A recording holds tier B only for the tickets the live run escalated; a ticket this T escalates without a recorded
+    // line would replay as a tier-B failure into the human queue at no cost, so the row is not a measurement.
+    const unrecorded = dev.filter((r) => r.path.startsWith('A>B') && !b1.rb.has(r.ticket_id)).length;
+    const measured = unrecorded
+      ? `n/a: ${unrecorded} escalated tickets have no recorded tier-B result`
+      : `${fmtBps(accOf(auto)).padStart(7)} of ${String(auto.length).padStart(3)}        ${String(hq).padStart(4)} (${pct(hq, m).padStart(7)})   ${String(per1k(sum(dev), m)).padStart(6)}`;
+    P(`  ${String(T).padEnd(5)} ${String(esc).padStart(4)} (${pct(esc, m).padStart(7)})   ${measured}`);
   }
   const test = split(runTickets(b1.tickets, b1.ra, b1.rb, c).rows, 'test');
   const auto = test.filter((r) => !r.needs_human);
