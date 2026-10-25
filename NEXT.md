@@ -1,6 +1,32 @@
 # NEXT
 
-## ▶ Next session: task 2.8 (`docs/phase-2-tasks.md`) — `triage:eval --provider recorded`
+## ▶ Next session: task 2.9 (`docs/phase-2-tasks.md`) — re-choose T on the dev split of the recordings
+
+**2026-10-25: task 2.8 done (D-49). Spend to date 90¢ (nothing spent this session).** `triage:eval --provider recorded` is held to `recordings/batch{1,2}/decisions.jsonl`, the live run's own decisions (the recorder now writes that file; the two first recordings got theirs from `data/live/`). Replay: 1,200 of 1,200 equal, deterministic, in CI without a key. Recorded-only lines: NOTE, `recording:` (run id, model and batch ids, STALE check on prompt/schema/model ids) and `cache (from usage fields):`. Scripted stdout stays byte-identical to the reference.
+
+First recorded numbers (answer key as judge, synthetic tickets; D-22 targets in brackets):
+
+| | batch 1 (700) | batch 2 (500) |
+|---|---|---|
+| needs_human recall [≥ 98%] | **95.57%**, 9 fn of 203 | **95.85%**, 9 fn of 217 |
+| P1 missed [0] | 0 of 42 | 0 of 70 |
+| delivered category accuracy [≥ 95% test split] | 94.90% of 412; **test split 94.15% of 171** | 94.62% of 223 |
+| escalated to B | 60.57% | 74.00% |
+| cache-read share of tier-A input | 96.83% | 96.84% |
+| cents per 1,000, batch prices | 66 | 79 |
+
+**The 18 false negatives are two templates, not 18 misses.** Every one is AMB-05 (`Deposits`: "How do deposits work? Who keeps the money if a client no-shows and do you charge us a fee?", key BILLING/P3) or AMB-07 (`Group bookings`: "Can two clients book one slot together...? If not, could that be added?", key FEATURE_REQUEST/P4). The generator sets `needs_human = True` for every AMBIGUOUS ticket by rule (`tools/build_fixtures.py` line 247). Haiku and Sonnet both say `needs_human: false` at 7000–8500 bps on these two and flag all eight other AMBIGUOUS templates (the per-template table is in D-49's reasoning; rerun: join `recordings/batchN/decisions.jsonl` with the key on `hard_case == AMBIGUOUS`). AMB-05 is also a category disagreement (model HOW_TO with BILLING secondary; key BILLING with HOW_TO secondary), which is most of the delivered-accuracy gap.
+
+**How to fix, in order (decide in 2.9/2.10, not in passing):**
+1. **2.10 first, on these two templates.** If Shane reads them as answerable, the key rule is wrong for them: change `build_fixtures.py` so AMB-05/AMB-07 carry `needs_human = False` (and decide AMB-05's primary category), regenerate the fixtures per brief §12 with a decisions entry, re-run both evals. The recordings stay valid: the tickets' text does not change (check the ten sha256s; `tickets_batch*.jsonl` must be byte-identical or the recordings are of other tickets). If Shane agrees with the key, the gap is a prompt lesson (D-16: a prompt change needs a new recording, ~86¢) or a policy rule; no code rule in `needs_human_when` catches "answerable-looking but ambiguous" without catching every SECONDARY-flagged ticket (226 of 700 and 200 of 500 carry one).
+2. **2.9 cannot fix recall.** T moves tickets from A to B; on these 18 both tiers agree, and 9 of them went to B already. T is for the delivered-accuracy and cost columns.
+3. **Not taken:** `final_min_confidence_bps_below` 6000 → 7000 as a needs_human rule. It would catch the A>B ones with min 6500–7000 (about 10 of 18) and swell the queue (the human-queue share is already 41% and 55%).
+
+Open carried from 2.7: (1) one `max_tokens` stop per batch on Sonnet, counted as `FINAL_TIER_FAILED:PARSE_JSON` (D-8). (3) D-48 restore note: 400¢ → 300¢ once the ceiling-over-real-cost (338¢ over 46¢) is judged. (4) answered by D-49.
+
+Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 14 files, 84 tests passed · triage:eval scripted 1,200 of 1,200 equal and stdout byte-identical, exit 0 · triage:eval recorded 1,200 of 1,200 equal to `recordings/batch{1,2}/decisions.jsonl`, exit 0. Spend to date: **90¢** of the 1500¢ project cap.
+
+## Older
 
 **2026-10-25: task 2.7 done (D-48). Both recordings committed; spend to date 90¢.** First attempt (2026-10-24) at the 300¢ cap: tier A of batch 1 ran (700 of 700, 4¢) and tier B was refused by projection (417 escalations → 312¢ ceiling over 296¢ left), `INCOMPLETE` row, partial tier A kept under `data/partial/batch1-tierA-20261024T1616/` (gitignored). Shane raised the run cap default to 400¢ (D-48, commit `f767c90`); both batches then ran at the new cap.
 
@@ -23,8 +49,6 @@ Replay check: `triage:run --provider recorded` over each committed recording giv
 Open for 2.8 (decide, do not fix in passing): (1) the one `max_tokens` stop per batch on Sonnet at `MAX_TOKENS` 1024 and effort `low`: the recordings show real tier-B output averages 165 tokens, so the one that hit 1024 is a long reason or thinking, not a tight limit; it counts as a failure in the eval as D-8 says. (2) Escalation share is 60–74% against 44% scripted, so the Haiku-only share and cost per 1,000 differ a lot from the scripted column; 2.9 (threshold sweep on the dev split) is where that moves, not 2.8. (3) Restore note D-48: run cap back to 300¢ once a ceiling over real cost (46¢ + 40¢) is shown to leave room; the ceiling is 7× the real cost because it assumes a cache miss and 1,024 output tokens per request. (4) What a recorded run is held to (D-38 cannot apply): propose the committed recording's own `decisions.jsonl` hash, plus the answer key for the accuracy columns.
 
 Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 14 files, 82 tests passed · triage:eval 1,200 of 1,200 equal, exit 0 · both recordings replay to identical decisions. Spend to date: **90¢** of the 1500¢ project cap (ledger: 4¢ INCOMPLETE + 46¢ + 40¢).
-
-## Older
 
 **2026-10-23: task 2.6 done (D-47).** `assertModelsListed` runs once per live provider before the first submit; a missing O-1 id throws `MODEL_NOT_LISTED` naming it, with 0 requests sent. `BatchClient` gains `models.list()`; the three fake clients got it. One planted mutant (check removed) turns `tests/live.test.ts` red.
 
