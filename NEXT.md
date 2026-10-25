@@ -1,6 +1,30 @@
 # NEXT
 
-## ▶ Next session: task 2.7 (`docs/phase-2-tasks.md`)
+## ▶ Next session: task 2.8 (`docs/phase-2-tasks.md`) — `triage:eval --provider recorded`
+
+**2026-10-25: task 2.7 done (D-48). Both recordings committed; spend to date 90¢.** First attempt (2026-10-24) at the 300¢ cap: tier A of batch 1 ran (700 of 700, 4¢) and tier B was refused by projection (417 escalations → 312¢ ceiling over 296¢ left), `INCOMPLETE` row, partial tier A kept under `data/partial/batch1-tierA-20261024T1616/` (gitignored). Shane raised the run cap default to 400¢ (D-48, commit `f767c90`); both batches then ran at the new cap.
+
+| | batch 1 (700) | batch 2 (500) |
+|---|---|---|
+| run id | `20261025T143308.223Z-live` | `20261025T144618.106Z-live` |
+| real cost, batch prices, usage fields | **46¢** (ceiling 338¢) | **40¢** |
+| escalated to tier B | 424 (60.6%; scripted fixture 312) | 370 (74.0%) |
+| path A / A>B / A>B>H / A>H | 233 / 179 / 245 / 43 | 104 / 119 / 251 / 26 |
+| needs_human true | 288 (41.1%) | 277 (55.4%) |
+| cache-read share of tier-A input | 1,390,311 of 1,435,868 = **96.8%** | 994,500 of 1,026,940 = **96.8%** |
+| cache-read share of tier-B input | 96.6% | 96.8% |
+| 1h cache writes | 1,989 tokens per tier (prefix written once or twice) | 0 (batch 1's prefix still cached) |
+| output tokens per request | A 162, B 164 | A 165, B 166 |
+| results | every line `succeeded`; tier B has **1 `max_tokens` stop per batch** → `FINAL_TIER_FAILED:PARSE_JSON` once per batch | same |
+| latency p50 / p95 (two samples: one per tier batch) | 364 / 423 s | 302 / 423 s |
+
+Replay check: `triage:run --provider recorded` over each committed recording gives decisions identical to the live run's `decisions.jsonl` (all 15 columns, both batches). Scripted eval unchanged: 1,200 of 1,200 equal.
+
+Open for 2.8 (decide, do not fix in passing): (1) the one `max_tokens` stop per batch on Sonnet at `MAX_TOKENS` 1024 and effort `low`: the recordings show real tier-B output averages 165 tokens, so the one that hit 1024 is a long reason or thinking, not a tight limit; it counts as a failure in the eval as D-8 says. (2) Escalation share is 60–74% against 44% scripted, so the Haiku-only share and cost per 1,000 differ a lot from the scripted column; 2.9 (threshold sweep on the dev split) is where that moves, not 2.8. (3) Restore note D-48: run cap back to 300¢ once a ceiling over real cost (46¢ + 40¢) is shown to leave room; the ceiling is 7× the real cost because it assumes a cache miss and 1,024 output tokens per request. (4) What a recorded run is held to (D-38 cannot apply): propose the committed recording's own `decisions.jsonl` hash, plus the answer key for the accuracy columns.
+
+Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 14 files, 82 tests passed · triage:eval 1,200 of 1,200 equal, exit 0 · both recordings replay to identical decisions. Spend to date: **90¢** of the 1500¢ project cap (ledger: 4¢ INCOMPLETE + 46¢ + 40¢).
+
+## Older
 
 **2026-10-23: task 2.6 done (D-47).** `assertModelsListed` runs once per live provider before the first submit; a missing O-1 id throws `MODEL_NOT_LISTED` naming it, with 0 requests sent. `BatchClient` gains `models.list()`; the three fake clients got it. One planted mutant (check removed) turns `tests/live.test.ts` red.
 
