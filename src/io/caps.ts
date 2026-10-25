@@ -13,7 +13,7 @@ export function capsFromEnv(env: Record<string, string | undefined>): Caps {
     if (!/^\d+$/.test(v)) throw new Error(`CAP_INVALID: ${k}=${JSON.stringify(v)} is not whole cents; nothing was sent`);
     return Number(v);
   };
-  return { runCents: cents('TRIAGE_RUN_CAP_CENTS', 300), projectCents: cents('TRIAGE_PROJECT_CAP_CENTS', 1500) };
+  return { runCents: cents('TRIAGE_RUN_CAP_CENTS', 400), projectCents: cents('TRIAGE_PROJECT_CAP_CENTS', 1500) };
 }
 
 interface LedgerRow { run_id: string; provider: string; cost_pico_batch: string; cap_status: string; acknowledges?: string[] }

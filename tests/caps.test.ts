@@ -48,8 +48,8 @@ function setup() {
 }
 
 describe('D-19 caps (fake client)', () => {
-  it('caps default to 300¢ (D-44) and 1500¢; anything but whole cents refuses', () => {
-    expect(capsFromEnv({})).toEqual({ runCents: 300, projectCents: 1500 });
+  it('caps default to 400¢ (D-48) and 1500¢; anything but whole cents refuses', () => {
+    expect(capsFromEnv({})).toEqual({ runCents: 400, projectCents: 1500 });
     expect(capsFromEnv({ TRIAGE_RUN_CAP_CENTS: '50', TRIAGE_PROJECT_CAP_CENTS: '' })).toEqual({ runCents: 50, projectCents: 1500 });
     for (const bad of ['-1', '1.5', 'none', ' 5']) expect(() => capsFromEnv({ TRIAGE_RUN_CAP_CENTS: bad })).toThrow(/CAP_INVALID/);
   });
