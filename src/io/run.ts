@@ -43,11 +43,13 @@ export async function triageRun(o: RunOptions) {
     return { latency_s_p50: percentile(xs, 50), latency_s_p95: percentile(xs, 95) };
   };
   const stamp = (ms: number) => new Date(ms).toISOString();
+  // task 2.5: each tier is recorded the moment it is read back (wx: a recording is never overwritten), so a failure later
+  // in the run cannot lose results that were already paid for
+  const recDir = join(root, 'recordings', stem(o.inPath).replace(/\.jsonl$/, ''));
   const writeMeta = () => {
     if (!batches.length) return;
-    const dir = join(root, 'recordings', stem(o.inPath).replace(/\.jsonl$/, ''));
     const { run_id, input, input_sha256, models: m, hashes } = base();
-    writeFileSync(join(dir, 'meta.json'), JSON.stringify({ run_id, input, input_sha256, models: m, hashes, ...latency(),
+    writeFileSync(join(recDir, 'meta.json'), JSON.stringify({ run_id, input, input_sha256, models: m, hashes, ...latency(),
       tiers: Object.fromEntries(batches.map((b) => [b.tier, { batch_id: b.batchId, requests: b.requests, submitted_at: stamp(b.submittedMs), completed_at: stamp(b.completedMs) }])) }, null, 2) + '\n');
   };
   const append = (row: object) => {
@@ -65,9 +67,6 @@ export async function triageRun(o: RunOptions) {
     if (ledger.overCap.length && !o.acknowledgeOverCap) {
       throw new Error(`CAP_LATCHED: ${ledger.overCap.join(', ')} went OVER_CAP; pass --acknowledge-over-cap to run again (D-19); nothing was sent`);
     }
-    // task 2.5: each tier is recorded the moment it is read back (wx: a recording is never overwritten), so a failure later
-    // in the run cannot lose results that were already paid for
-    const recDir = join(root, 'recordings', stem(o.inPath).replace(/\.jsonl$/, ''));
     // checked before any money goes out: a refused write after tier A spent would lose paid-for results
     if (existsSync(recDir)) throw new Error(`RECORDING_EXISTS: ${recDir} is already there and a recording is never overwritten; rename the input or move the recording; nothing was sent`);
     const onBatch = (b: BatchInfo) => {
@@ -114,7 +113,10 @@ export async function triageRun(o: RunOptions) {
   const { rows, tokens, costPicoBatch } = runTickets(tickets, ra, rb, c);
 
   mkdirSync(o.outDir, { recursive: true });
-  writeFileSync(join(o.outDir, 'decisions.jsonl'), rows.map((r) => JSON.stringify(r) + '\n').join(''), { flag: 'wx' });
+  const decisions = rows.map((r) => JSON.stringify(r) + '\n').join('');
+  writeFileSync(join(o.outDir, 'decisions.jsonl'), decisions, { flag: 'wx' });
+  // task 2.8 (D-49): the recording carries the decisions the live run took, which is what a recorded eval is held to
+  if (live) writeFileSync(join(recDir, 'decisions.jsonl'), decisions, { flag: 'wx' });
   const finished = o.now();
   const row = {
     ...base(), tickets: rows.length, intake_errors: errors.length,

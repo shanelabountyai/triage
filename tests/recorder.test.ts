@@ -58,6 +58,7 @@ describe('recorder', () => {
     const replay = await triageRun({ ...s.base, provider: 'recorded', outDir: join(s.root, 'out2') });
     const lines = (d: string) => readFileSync(join(s.root, d, 'decisions.jsonl'), 'utf8');
     expect(lines('out2')).toBe(lines('out1'));
+    expect(lines('recordings/rec')).toBe(lines('out1')); // D-49: the recording carries the live run's decisions
     expect(replay.row).toMatchObject({ latency_s_p50: null, latency_s_p95: null });
   });
 

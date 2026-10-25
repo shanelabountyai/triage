@@ -36,3 +36,5 @@ jobs:
         run: npm test
       - if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: npm run triage:eval      # exits non-zero if any per-ticket decision differs from fixtures/decisions_batch{1,2}.csv
+      - if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run triage:eval -- --provider recorded   # replays recordings/ (no key); exits non-zero on any difference from recordings/*/decisions.jsonl (D-49)

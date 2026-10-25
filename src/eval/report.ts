@@ -1,6 +1,9 @@
 // triage:eval (task 1.11, brief §11): both fixture batches through the pipeline, scored against the answer key,
 // printed in the format of fixtures/samples/reference_pipeline.output.txt (reference_pipeline.report). The only
 // code that reads an answer key or a decisions file (CLAUDE.md non-negotiable 10); src/pipeline/ never does.
+// A scripted run is held to fixtures/decisions_batch{1,2}.csv (D-38); a recorded run to the decisions the live run itself
+// took, recordings/batch{1,2}/decisions.jsonl (D-49). Everything printed only for `recorded` keeps scripted stdout
+// byte-identical to the reference file.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Prices } from '../pipeline/cost.js';
@@ -17,6 +20,7 @@ import { readTickets } from '../io/tickets.js';
 
 const SEED = 20261019;
 type Row = Record<string, string>;
+type Meta = { run_id: string; models: Record<string, string>; hashes: Record<string, string>; tiers: Record<string, { batch_id: string; requests: number }> };
 
 /** RFC 4180 enough for the fixtures: quoted fields with "" escapes (attacker_wants is JSON), no newlines in a field. */
 export function parseCsv(text: string): Row[] {
@@ -59,32 +63,34 @@ export async function evalReport(providerName: ProviderName, root = '.') {
   P(`triage reference pipeline  results=${providerName}  seed=${SEED}  policy=v1 (T=${thr})  fixtures seed=${json<{ seed: number }>('fixtures/MANIFEST.json').seed}`);
   P(`policy sha256 ${h('routing/policy.v1.json')}  drift ${h('monitoring/drift.v1.json')}  prices ${h('pricing/prices.v1.json')}  prompt ${h('prompts/classify.v1.md')}  schema ${h('schemas/triage.v1.json')}`);
   if (providerName === 'scripted') P('NOTE: results are from tools/scripted_model.py, a designed error model. These numbers test the plumbing and the arithmetic, not a model. Token counts are estimates.');
+  else P('NOTE: results are real Message Batches responses replayed from recordings/ (D-49). These numbers measure the two models on synthetic tickets whose answer key was written by the same author; they say nothing about a production inbox. Token counts and cost are from the usage fields.');
 
-  const p = provider(providerName);
+  const p = provider(providerName, root);
   const load = async (n: number) => {
     const inPath = join(root, `fixtures/tickets_batch${n}.jsonl`);
     const { tickets, errors } = readTickets(inPath);
     if (errors.length) throw new Error(`${inPath}: ${errors.length} intake error(s)`);
     // Tier B is asked for every ticket's line; runTickets reads only the escalated ones, so the sweep reuses the same maps.
     return { tickets, ra: await p('A', tickets, inPath), rb: await p('B', tickets, inPath),
-      key: new Map(parseCsv(file(`fixtures/answer_key_batch${n}.csv`)).map((k) => [k['ticket_id']!, k])) };
+      key: new Map(parseCsv(file(`fixtures/answer_key_batch${n}.csv`)).map((k) => [k['ticket_id']!, k])),
+      meta: providerName === 'recorded' ? json<Meta>(`recordings/batch${n}/meta.json`) : null };
   };
   const batches = [await load(1), await load(2)];
   const windows = [];
 
-  for (const [i, { tickets, ra, rb, key }] of batches.entries()) {
+  for (const [i, { tickets, ra, rb, key, meta }] of batches.entries()) {
     const n = i + 1;
     const { rows, tiers } = runTickets(tickets, ra, rb, c);
     const k = (r: DecisionRow) => key.get(r.ticket_id)!;
     const overridden = (r: DecisionRow) => r.human_touched && (r.category !== k(r)['category'] || r.priority !== k(r)['priority']);
 
-    // Per-ticket check against the frozen decisions; those are the scripted reference, so only a scripted run is held to them.
-    if (providerName === 'scripted') {
-      const want = file(`fixtures/decisions_batch${n}.csv`).trim().split('\n').slice(1);
-      const ours = rows.map((r) => csvLine(r, overridden(r)));
-      if (want.length !== ours.length) diffs.push(`batch ${n}: ${ours.length} decisions, expected ${want.length}`);
-      ours.forEach((l, j) => l !== want[j] && diffs.push(`batch ${n} line ${j + 2}:\n  ours     ${l}\n  expected ${want[j]}`));
-    }
+    // Per-ticket check: scripted against the frozen CSV (its header is skipped), recorded against the live run's own decisions.
+    const scripted = providerName === 'scripted';
+    const heldFile = scripted ? `fixtures/decisions_batch${n}.csv` : `recordings/batch${n}/decisions.jsonl`;
+    const want = file(heldFile).trim().split('\n').slice(scripted ? 1 : 0);
+    const ours = rows.map((r) => (scripted ? csvLine(r, overridden(r)) : JSON.stringify(r)));
+    if (want.length !== ours.length) diffs.push(`batch ${n}: ${ours.length} decisions, expected ${want.length} in ${heldFile}`);
+    ours.forEach((l, j) => l !== want[j] && diffs.push(`batch ${n} ${heldFile} line ${j + 1 + (scripted ? 1 : 0)}:\n  ours     ${l}\n  expected ${want[j]}`));
 
     // The answer key stands in for the person on every human-touched ticket (O-6), so reviewed = human-touched here.
     const overrides = new Map<string, Override>(rows.filter((r) => r.human_touched).map((r) => [r.ticket_id, { category: k(r)['category']!, priority: k(r)['priority']! }]));
@@ -93,6 +99,14 @@ export async function evalReport(providerName: ProviderName, root = '.') {
     const m = rows.length;
     P('');
     P(`== batch ${n}: ${m} tickets ==`);
+    if (meta) {
+      // The recording is a measurement of the prompt, schema and model ids it was made with; the policy can move under it (2.9).
+      const stale = ['prompts/classify.v1.md', 'schemas/triage.v1.json'].filter((f) => meta.hashes[f] !== sha256File(join(root, f)))
+        .concat((['A', 'B'] as const).filter((t) => meta.models[t] !== policy.tiers[t].model).map((t) => `model ${t}`));
+      P(`recording: run ${meta.run_id}  models A ${meta.models['A']} B ${meta.models['B']}  `
+        + `batches ${(['A', 'B'] as const).map((t) => `${t} ${meta.tiers[t]?.batch_id ?? 'none'} (${meta.tiers[t]?.requests ?? 0} requests)`).join('  ')}  `
+        + `held to recordings/batch${n}/decisions.jsonl  ${stale.length ? `STALE: recorded under a different ${stale.join(', ')}` : 'prompt, schema and model ids current'}`);
+    }
     const tally = (xs: string[]) => [...xs.reduce((mm, x) => mm.set(x, (mm.get(x) ?? 0) + 1), new Map<string, number>())].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
     P('paths: ' + tally(rows.map((r) => r.path)).map(([x, v]) => `${x} ${v}`).join('  '));
     P(`escalated to B ${ws.escalated} (${pct(ws.escalated, m)})  human queue ${ws.humanQueue} (${pct(ws.humanQueue, m)})  `
@@ -173,6 +187,15 @@ export async function evalReport(providerName: ProviderName, root = '.') {
         ['input_tokens', u.input], ['output_tokens', u.output]] as const) tok.set(`${tier}:${f}`, (tok.get(`${tier}:${f}`) ?? 0) + v);
     }
     P('tokens: ' + [...tok].sort(([a], [b]) => (a < b ? -1 : 1)).map(([x, v]) => `${x} ${v}`).join('  '));
+    if (meta) {
+      // Real cache-read share of each tier's input (non-negotiable 8): read / (input + read + writes), from the usage fields.
+      const share = (tier: string) => {
+        let rd = 0, all = 0, w = 0;
+        for (const [t, r] of both) if (t === tier && r.usage) { rd += r.usage.cacheRead; w += r.usage.cacheCreation1h; all += r.usage.input + r.usage.cacheRead + r.usage.cacheCreation5m + r.usage.cacheCreation1h; }
+        return `tier ${tier} read ${rd} of ${all} input tokens (${pct(rd, all)}), 1h writes ${w}`;
+      };
+      P(`cache (from usage fields): ${share('A')}  ${share('B')}`);
+    }
     P(`override rate: ${ws.overridden}/${ws.humanTouched} human-touched (${pct(ws.overridden, ws.reviewed)}); human = answer key (assumed perfect, O-6); audit sample ${policy.audit_sample_bps} bps`);
   }
 
@@ -200,5 +223,6 @@ export async function evalReport(providerName: ProviderName, root = '.') {
   for (const s of driftSignals(windows[0]!, windows[1]!, drift))
     P(`  ${s.id.padEnd(34)} ${String(s.valueBps).padStart(6)} bps  ${String(s.thresholdBps).padStart(6)} bps  ${s.fired ? 'YES' : 'no'}`);
   P('  (a distance of 1000 bps means 10% of the mix moved; a delta of 500 bps means the rate rose 5 points)');
-  return { lines: out, diffs, tickets: batches.reduce((s, b) => s + b.tickets.length, 0) };
+  return { lines: out, diffs, tickets: batches.reduce((s, b) => s + b.tickets.length, 0),
+    heldTo: providerName === 'scripted' ? 'fixtures/decisions_batch{1,2}.csv' : 'recordings/batch{1,2}/decisions.jsonl' };
 }

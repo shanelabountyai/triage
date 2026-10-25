@@ -43,3 +43,28 @@ describe('triage:eval (scripted)', () => {
     expect(r.diffs.length).toBeGreaterThan(0);
   }, 30_000);
 });
+
+describe('triage:eval (recorded, D-49)', () => {
+  it('is held to the live run\'s own decisions, is deterministic, and prints the real cache-read share', async () => {
+    const a = await evalReport('recorded');
+    const b = await evalReport('recorded');
+    expect(a.diffs).toEqual([]);
+    expect(a.tickets).toBe(1200);
+    expect(a.heldTo).toBe('recordings/batch{1,2}/decisions.jsonl');
+    expect(a.lines).toEqual(b.lines);
+    expect(a.lines.filter((l) => l.startsWith('cache (from usage fields): tier A read '))).toHaveLength(2);
+    expect(a.lines.filter((l) => l.startsWith('recording: run ') && l.endsWith('prompt, schema and model ids current'))).toHaveLength(2);
+  }, 30_000);
+
+  it('reports a per-ticket difference when a committed decision is edited', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'triage-eval-rec-'));
+    for (const d of ['fixtures', 'routing', 'pricing', 'schemas', 'monitoring', 'prompts', 'recordings']) cpSync(d, join(root, d), { recursive: true });
+    const p = join(root, 'recordings/batch2/decisions.jsonl');
+    const lines = readFileSync(p, 'utf8').split('\n');
+    lines[3] = lines[3]!.replace(/"needs_human":(true|false)/, (_, v) => `"needs_human":${v === 'true' ? 'false' : 'true'}`);
+    writeFileSync(p, lines.join('\n'));
+    const r = await evalReport('recorded', root);
+    expect(r.diffs).toHaveLength(1);
+    expect(r.diffs[0]).toContain('batch 2 recordings/batch2/decisions.jsonl line 4');
+  }, 30_000);
+});
