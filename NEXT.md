@@ -1,6 +1,18 @@
 # NEXT
 
-## ▶ Next session: task 2.9 (`docs/phase-2-tasks.md`) — re-choose T on the dev split of the recordings
+## ▶ Next session: task 2.10 (`docs/phase-2-tasks.md`) — Shane's 30 (D-24), then re-decide O-3 and the needs_human rules
+
+**2026-10-26: task 2.9 done (D-50). T stays 7500. Spend to date 127¢** (ledger: 4¢ INCOMPLETE + 46¢ + 40¢ + top-ups 25¢ + 12¢). The recorded sweep was only measurable at T ≤ 7500 because a recording holds Sonnet lines for escalated tickets only; the rows above replayed as tier-B failures. Fixed by (1) printing `n/a` on an unmeasurable row and (2) `triage:run --provider live --top-up-tier-b`, which sent Sonnet the 276 + 130 non-escalated tickets and appended them to `recordings/batch{1,2}/tierB.jsonl` (meta.json `topup`, own ledger rows). Decisions unchanged: 1,200 of 1,200 still equal.
+
+Sweep, batch 1 dev split, recorded (D-50): 7000 → 93.80% of 258 auto-handled at 41¢/1k · **7500 → 95.44% of 241 at 64¢** · 8000 → 95.45% of 242 at 71¢ · 9500 → 95.44% of 241 at 102¢. Flat above, falling below; no policy hash change, no new EVAL. Test split at 7500: 94.15% of 171.
+
+**For 2.10:** pick 30 human-queue tickets from `recordings/batch1/decisions.jsonl` (needs_human true; 288 of 700), record Shane's judgement per ticket in `eval/labels/shane-30.json`, print agreement with the pipeline's reasons and the share he would have auto-handled. Include AMB-05 and AMB-07 tickets deliberately: they carry the 18 recall false negatives (D-49) and the key rule for them is what 2.10 adjudicates. Then re-decide O-3 and the needs_human rules (D-24). A key change regenerates fixtures per brief §12 with a decisions entry; the recordings stay valid if `tickets_batch*.jsonl` stay byte-identical.
+
+**Open, carried:** (1) one `max_tokens` stop per batch on Sonnet, counted as `FINAL_TIER_FAILED:PARSE_JSON` (D-8). (2) D-48 restore note: run cap 400¢ → 300¢; the real tier-B costs are now known (42¢, 36¢, top-ups 25¢, 12¢ against ceilings of 312¢ and ~206¢), so this can be judged. (3) Refusal smokes must move `.env.local` aside: `scripts/run.ts` loads it for any `live` run (D-50 process note).
+
+Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 14 files, 87 tests passed · triage:eval scripted 1,200 of 1,200 equal and stdout byte-identical, exit 0 · triage:eval recorded 1,200 of 1,200 equal to `recordings/batch{1,2}/decisions.jsonl`, exit 0, every sweep row measured. Spend to date: **127¢** of the 1500¢ project cap.
+
+## Older
 
 **2026-10-25: task 2.8 done (D-49). Spend to date 90¢ (nothing spent this session).** `triage:eval --provider recorded` is held to `recordings/batch{1,2}/decisions.jsonl`, the live run's own decisions (the recorder now writes that file; the two first recordings got theirs from `data/live/`). Replay: 1,200 of 1,200 equal, deterministic, in CI without a key. Recorded-only lines: NOTE, `recording:` (run id, model and batch ids, STALE check on prompt/schema/model ids) and `cache (from usage fields):`. Scripted stdout stays byte-identical to the reference.
 
@@ -26,158 +38,3 @@ Open carried from 2.7: (1) one `max_tokens` stop per batch on Sonnet, counted as
 
 Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 14 files, 84 tests passed · triage:eval scripted 1,200 of 1,200 equal and stdout byte-identical, exit 0 · triage:eval recorded 1,200 of 1,200 equal to `recordings/batch{1,2}/decisions.jsonl`, exit 0. Spend to date: **90¢** of the 1500¢ project cap.
 
-## Older
-
-**2026-10-25: task 2.7 done (D-48). Both recordings committed; spend to date 90¢.** First attempt (2026-10-24) at the 300¢ cap: tier A of batch 1 ran (700 of 700, 4¢) and tier B was refused by projection (417 escalations → 312¢ ceiling over 296¢ left), `INCOMPLETE` row, partial tier A kept under `data/partial/batch1-tierA-20261024T1616/` (gitignored). Shane raised the run cap default to 400¢ (D-48, commit `f767c90`); both batches then ran at the new cap.
-
-| | batch 1 (700) | batch 2 (500) |
-|---|---|---|
-| run id | `20261025T143308.223Z-live` | `20261025T144618.106Z-live` |
-| real cost, batch prices, usage fields | **46¢** (ceiling 338¢) | **40¢** |
-| escalated to tier B | 424 (60.6%; scripted fixture 312) | 370 (74.0%) |
-| path A / A>B / A>B>H / A>H | 233 / 179 / 245 / 43 | 104 / 119 / 251 / 26 |
-| needs_human true | 288 (41.1%) | 277 (55.4%) |
-| cache-read share of tier-A input | 1,390,311 of 1,435,868 = **96.8%** | 994,500 of 1,026,940 = **96.8%** |
-| cache-read share of tier-B input | 96.6% | 96.8% |
-| 1h cache writes | 1,989 tokens per tier (prefix written once or twice) | 0 (batch 1's prefix still cached) |
-| output tokens per request | A 162, B 164 | A 165, B 166 |
-| results | every line `succeeded`; tier B has **1 `max_tokens` stop per batch** → `FINAL_TIER_FAILED:PARSE_JSON` once per batch | same |
-| latency p50 / p95 (two samples: one per tier batch) | 364 / 423 s | 302 / 423 s |
-
-Replay check: `triage:run --provider recorded` over each committed recording gives decisions identical to the live run's `decisions.jsonl` (all 15 columns, both batches). Scripted eval unchanged: 1,200 of 1,200 equal.
-
-Open for 2.8 (decide, do not fix in passing): (1) the one `max_tokens` stop per batch on Sonnet at `MAX_TOKENS` 1024 and effort `low`: the recordings show real tier-B output averages 165 tokens, so the one that hit 1024 is a long reason or thinking, not a tight limit; it counts as a failure in the eval as D-8 says. (2) Escalation share is 60–74% against 44% scripted, so the Haiku-only share and cost per 1,000 differ a lot from the scripted column; 2.9 (threshold sweep on the dev split) is where that moves, not 2.8. (3) Restore note D-48: run cap back to 300¢ once a ceiling over real cost (46¢ + 40¢) is shown to leave room; the ceiling is 7× the real cost because it assumes a cache miss and 1,024 output tokens per request. (4) What a recorded run is held to (D-38 cannot apply): propose the committed recording's own `decisions.jsonl` hash, plus the answer key for the accuracy columns.
-
-Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 14 files, 82 tests passed · triage:eval 1,200 of 1,200 equal, exit 0 · both recordings replay to identical decisions. Spend to date: **90¢** of the 1500¢ project cap (ledger: 4¢ INCOMPLETE + 46¢ + 40¢).
-
-**2026-10-23: task 2.6 done (D-47).** `assertModelsListed` runs once per live provider before the first submit; a missing O-1 id throws `MODEL_NOT_LISTED` naming it, with 0 requests sent. `BatchClient` gains `models.list()`; the three fake clients got it. One planted mutant (check removed) turns `tests/live.test.ts` red.
-
-Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 14 files, 82 tests passed · triage:eval 1,200 of 1,200 equal, exit 0. Spend to date: **$0**.
-
-**2026-10-23: task 2.5 done (D-46).** The live run records each tier to `recordings/<name>/tier{A,B}.jsonl` as it arrives, plus `meta.json`; the ledger row carries `submitted_at`, `completed_at`, `latency_s_p50/p95` (one sample per tier batch). Existing recording → `RECORDING_EXISTS` before anything is sent. A replay of the recording gives byte-identical `decisions.jsonl` (test, fake client). `tests/caps.test.ts` now uses a temp root so no test writes into the repo's `recordings/`.
-
-Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 14 files, 81 tests passed · triage:eval 1,200 of 1,200 equal, stdout byte-identical to the reference, exit 0. Spend to date: **$0**.
-
-**2026-10-23: task 2.4 done (D-45).** The reader read `null` cache counters (the real SDK shape) as malformed, so every live line would have been `RESULT_SHAPE`; `null` now reads as 0. A cache write without the 5m/1h split is now a typed error rather than booked as 5m (it was cheaper than the 1h we request). Thinking tokens are already inside `output_tokens`. `tests/cost.test.ts` gains 4 tests on hand-written real-shape usage (1h write 212,600,000 pico; null-counter read 33,080,000); three planted mutants (1h priced as 5m, null rejected, 5m guess restored) each turn it red. Fixtures unchanged.
-
-Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 13 files, 78 tests passed · triage:eval 1,200 of 1,200 equal, stdout byte-identical to the reference, exit 0. Spend to date: **$0**.
-
-**2026-10-23: the run cap default is 300¢ (D-44, Shane's choice).** Both batches fit the D-43 ceiling (259¢ and 224¢); the project cap stays 1500¢. Restore note in D-44.
-
-**2026-10-22: task 2.3 done (D-43).** `projectPico` (ceiling: 1h write on the prefix, `estTokens` input, 1024 output, batch prices) in `src/pipeline/cost.ts`; `src/io/caps.ts` (`capsFromEnv`, `ledgerState` counting live rows only, `headroomPico`); `triageRun` runs the latch, then a projection before each tier's submit, then sets `cap_status` OK/OVER_CAP from real usage, and appends an INCOMPLETE row if anything fails after tier A spent. `triage:run --provider live` is wired through `liveFromEnv`; `--acknowledge-over-cap` added; `.env.local` loaded for live only (it does not exist yet). `provider('live')` is the stub `LIVE_ONLY_VIA_RUN`, so the eval cannot spend. `tests/caps.test.ts`: 7 tests; four planted mutants each turn it red. CLI smoke: `--provider live` without `TRIAGE_LIVE` → `LIVE_REFUSED`, exit 1, no ledger row.
-
-Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 13 files, 74 tests passed · triage:eval 1,200 of 1,200 equal, stdout byte-identical to the reference, exit 0. Spend to date: **$0**.
-
-**2026-10-21: task 2.2 done (D-42).** `src/providers/live.ts`: `buildRequests`, `assertPrefixIdentical`, `liveProvider` (create → poll → stream results through the D-9 reader, keyed by `custom_id`), `liveFromEnv` (refuses without `TRIAGE_LIVE=1` and a key). `PARSE_REFUSAL` is in `tierResult`, with GP-09; the reader carries `stopReason`. Decisions taken by default, recorded in D-42: `max_tokens` 1024 as a constant until the next policy version; the schema is sent without `$comment`; user turn `Subject: …\n\n<body>`. `tests/live.test.ts` (fake client, no network): request shape, a one-byte change to the system or schema refuses, all four `result.type`s out of order, refusals. Two planted mutants (assert disabled, refusal check broken) each turn the tests red.
-
-Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 12 files, 67 tests passed · triage:eval 1,200 of 1,200 equal, stdout byte-identical to the reference, exit 0. Spend to date: **$0**.
-
-**2026-10-21: task 2.1 done (D-41).** `@anthropic-ai/sdk` exact 0.137.0 is the only runtime dependency (7 transitive packages, listed in D-41). `tests/lint.test.ts` gains an import-boundary block: `src/pipeline/` imports only `./*` and `node:crypto`, and `@anthropic-ai/` appears only under `src/providers/` (nothing imports it yet). A planted import fails both tests and `policy:lint`. The Phase 2 API facts hold in the 0.137.0 types (D-41). `npm audit --omit=dev` 0; the 6 full-audit findings are the pre-existing vitest 2.x dev chain, a separate decision if wanted.
-
-Gate at this checkpoint: `npm ci` clean · typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 11 files, 61 tests passed · triage:eval 1,200 of 1,200 equal, stdout byte-identical to the reference, exit 0. Spend to date: **$0**.
-
-**2026-10-21: Phase 1 gate reviewed. The open questions are answered in D-40:** SDK exact 0.137.0 (1.0.0 came out the same day, so it waits about two weeks for a new D-entry); effort `low`; the 2.3 projection allows `max_tokens` output tokens per request; refusal becomes `PARSE_REFUSAL`, a new D-8 code with a GP golden (task 2.2); the key goes in `.env.local`, loaded only by `scripts/run.ts`. Deps change in 2.1, so check that `npm ci` is clean and that `policy:lint` still passes. Spend to date: **$0**.
-
-
-**2026-10-21: task 1.12 done, Phase 1 exit criteria met.** `docs/EVAL.md` pastes `npm run -s triage:eval 2>/dev/null` verbatim (scripted, designed error model, not a measurement; D-23), with the five D-26 hashes and the ten fixture hashes. 1,200 of 1,200 per-ticket decisions are equal, and stdout is byte-identical to the reference.
-- **Red run:** https://github.com/shanelabountyai/triage/actions/runs/39618261876. This was draft PR #4, which moved T from 7500 to 7000 on a throwaway branch; the PR is closed unmerged and the branch deleted. typecheck passed. policy:lint failed (D-26 hash), fixtures:check failed, npm test failed (7 of 11 files) and triage:eval failed (451 per-ticket differences).
-- **Green run:** https://github.com/shanelabountyai/triage/actions/runs/39618452718 (`ec415a2` on main, every step passed).
-- **Phase 2 plan:** `docs/phase-2-tasks.md` (2.1–2.11). The API facts in it were checked on 2026-10-21:
-  - Thinking is on by default on Haiku 5.5 and Sonnet 5.5, so effort has to be set and thinking tokens bill as output.
-  - `fallbacks` is rejected on Batches, so a refusal becomes a typed failure.
-  - The minimum cacheable prefix is 512 tokens, under the 1,316-token prefix.
-  - Usage carries `cache_creation.ephemeral_{5m,1h}_input_tokens`.
-- **Open for Shane before 2.1:** the SDK version pin, the effort level (proposed `low`), the thinking allowance in the projection, the refusal failure code, and where the key file lives.
-
-Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 11 files, 59 tests passed · triage:eval 1,200 tickets equal, exit 0 · CI green without a key. Spend to date: **$0**.
-
-**2026-10-20, task 1.11 done (D-38).** `src/eval/report.ts` (`evalReport`, `parseCsv`), `src/pipeline/evalmath.ts` (`prf`, `eceBps`), `fmtBps` in `num.ts`, `runTickets` also returns `tiers`, `scripts/eval.ts` real. `npm run triage:eval` stdout is byte-identical to `fixtures/samples/reference_pipeline.output.txt` (102 lines; scripted results, designed error model, not a measurement); stderr `per-ticket decisions: 1200 of 1200 equal`. Exits 1 on any per-ticket difference: a test moves T 7500 → 7000 in a temp copy and the diffs are non-empty. For 1.12: the throwaway-branch proof is the same edit to `routing/policy.v1.json`. That also breaks the D-26 hash, so `policy:lint`, `npm test` and `triage:eval` all go red; since D-39 every gate step runs after a failure, so the red run shows each one. CI triggers only on `main` pushes and pull requests, so the proof is a **draft PR** from the throwaway branch, closed unmerged afterwards; `docs/EVAL.md` can paste `npm run -s triage:eval 2>/dev/null` verbatim.
-
-Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 11 files, 59 tests passed · triage:eval 1,200 tickets, output equal to the reference, exit 0. Spend to date: **$0**.
-
-**2026-10-20, task 1.10 done (D-36, D-37).** Override rate is over *reviewed* touched tickets (D-37); fixtures unchanged. `src/pipeline/drift.ts` (`tvdBps`, `windowStats`, `driftSignals`), `src/io/overrides.ts` (append-only, latest row wins, typed errors), `src/io/drift.ts` (`runDecisions`, `driftReport`), `scripts/drift-report.ts` real, `scripts/overrides-standin.ts` (O-6, fixtures only). New decision column `tier_a_min_bps`. `drift:report -- --baseline <run_id> --window <run_id>` on batch 2 vs 1 prints the brief §11 table line for line, 5 of 8 fired. For 1.11: `windowStats` takes an override map, so the eval can build it from the answer key directly (every touched ticket then counts as reviewed, so `reviewed = humanTouched` there) (the stand-in rows and the eval's key join are the same thing); the drift table lines in `driftReport` are already the reference format, but its header lines differ from the reference's (`drift: batch 2 window vs batch 1 baseline …`), so the eval prints its own header.
-
-Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 10 files, 51 tests passed · triage:eval "0 tickets", exit 0. Spend to date: **$0**.
-
-**2026-10-20, task 1.9 done (D-35).** `src/pipeline/run.ts` (`needsTierB`, `runTickets`, `auditSampled`), `src/providers/index.ts` (`provider('scripted'|'recorded'|'live')`), `src/io/run.ts` (`triageRun`), `scripts/run.ts` real. Batch 1 → 700 decisions equal to the CSV on all 15 columns; ledger hashes equal D-26. `triage:run -- --in fixtures/tickets_batch1.jsonl --provider scripted --out <dir>` prints 700 tickets, 19¢ at batch prices (scripted, not a measurement). For 1.10: `auditSampled` already exists (D-21) and `human_touched` is on every decision row; `overridden` is `null` in `decisions.jsonl` and is what the overrides join must fill (the answer key stands in, O-6, in the fixture stand-in only). `drift:report --baseline <run>` has to pick what `<run>` names: the ledger `run_id` (row has `out`) or the out dir.
-
-Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 9 files, 45 tests passed · triage:eval "0 tickets", exit 0. Spend to date: **$0**.
-
-**2026-10-20, task 1.8 done (D-34).** `src/pipeline/cost.ts` (`priceRow`, `costPico(model, usage, batch, prices)` → bigint pico, `estTokens`; types `Prices`, `PriceRow`), `ceilDiv` in `num.ts`, `Policy.tiers`. GC-01..09 pass; `cost_pico_batch`/`cost_pico_standard` equal the CSVs on all 1,200 tickets (a mutant pricing 1h writes at 5m fails it). For 1.9: per-ticket cost = `costPico(a.model ?? policy.tiers.A.model, a.usage, …) + (b ? costPico(b.model ?? policy.tiers.B.model, b.usage, …) : 0n)`, as `tests/cost.test.ts` does; the last two CSV columns (`human_touched`, `overridden`) need the audit sample (1.10's `audit_sampled`) and the answer key, which product code never reads, so 1.9's "every column" check has to say how it gets them.
-
-Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 8 files, 42 tests passed · triage:eval "0 tickets", exit 0. Spend to date: **$0**.
-
-**2026-10-20, task 1.7 done (D-33).** `src/pipeline/decide.ts` (`escalate`, `routeFor`, `decide(ticketId, text, a, b, policy)`, `minBps`; types `Policy`, `Decision`). GT-01..14 pass; batch 1 twice → identical; path..reasons equal `fixtures/decisions_batch{1,2}.csv` on all 1,200 tickets (a `<=`/+500 mutant on the 6000 floor fails the test). For 1.8: the CSV's last four columns (`cost_pico_batch`, `cost_pico_standard`, `human_touched`, `overridden`) are what `tests/decide.test.ts` strips; cost is A's usage plus B's when escalated, with the tier's model from the policy when `tierResult.model` is null (`reference_pipeline.run_batch`).
-
-Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 7 files, 36 tests passed · triage:eval "0 tickets", exit 0. Spend to date: **$0**.
-
-**2026-10-20, task 1.6 done (D-32).** `src/pipeline/parse.ts` (`parseResult(text, schema)`, `tierResult`; types `Parsed`, `Usage`, `BatchResult`, `TierResult`), `src/io/results.ts` (`parseResults`/`readResults`, typed RESULT_JSON / SHAPE / DUPLICATE_ID). GP-01..08 pass. Over the four scripted files (2,400 lines): 0 reader errors; tier A batch 1 PARSE_ENUM:category 6, PARSE_JSON 3, errored 10; batch 2 2 / 2 / 2; tier B errored over escalated tickets 0 (batch 1) and 2 (batch 2), escalated set taken from the decisions CSV in the test only; failure code, every parsed field and every usage count agree with `reference_pipeline.to_tier` on all 2,400 lines. For 1.7: `tierResult` returns `model: null` for a non-succeeded or missing line, so `decide` takes the tier's model from the policy (as the oracle does); the parsed fields are camelCase (`categoryBps`, `priorityBps`, `needsHumanBps`, `secondaryCategory`).
-
-Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 6 files, 31 tests passed · triage:eval "0 tickets", exit 0. Spend to date: **$0**.
-
-**2026-10-19, task 1.5 done (D-31).** `src/pipeline/screen.ts` (eight rules from triagelib, flags `iu`, one hit per rule; `screenText` = subject + "\n" + body), `src/io/tickets.ts` (`parseTickets`/`readTickets`, typed per-line errors INTAKE_JSON / FIELD / ID / DUPLICATE_ID). Screen over 1,200 fixture tickets: 36 of 36 injection tickets flagged, 0 of 1,164 others (scripted fixture set; the rules were written with it in view, so this is an upper bound). The screen also agrees with `triagelib.screen` rule for rule and match for match on every ticket (the test calls python3). Known divergence: JS `\b` is ASCII, so on non-ASCII text next to a keyword the TypeScript screen flags more than the oracle does. 1.6 reuses `validate` against `schemas/triage.v1.json`.
-
-Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 5 files, 25 tests passed · triage:eval "0 tickets", exit 0. Spend to date: **$0**.
-
-**Earlier, task 1.4 (D-30).** `src/pipeline/validate.ts` (closed JSON-Schema subset; `schemaErrors` + `validate`), `src/pipeline/contracts.ts` (policy/drift/prices shapes, closed objects, structural only), `src/io/lint.ts` (`dataErrors`, `hashErrors`, `sourceErrors`, `pipelineErrors`), `scripts/policy-lint.ts` real. Float lint walks the TypeScript AST (dev dep already present), so the screen's regex literals in 1.5 will not trip the division rule. Task 1.6 should reuse `validate` against `schemas/triage.v1.json` (uppercase enums first; the schema says case-insensitive). Left for 1.7/1.8: route table covers every category, tier models priced.
-
-Gate at this checkpoint: typecheck 0 errors · policy:lint OK (data files, D-26 hashes, src/pipeline) and exits 1 on an injected `0.5` · fixtures:check OK · `npm test` 3 files, 15 tests passed · triage:eval "0 tickets", exit 0. Spend to date: **$0**.
-
-**Earlier, task 1.3:** `src/pipeline/num.ts` (`roundHalfUp`, `bps`, `picoToCents`), `src/io/hash.ts` (`sha256File`, `recordedHashes`); lineage D-28; `fmtBps` left for 1.11.
-
-### History
-
-**2026-10-19 (Mac, kickoff steps 1–7):** scaffold committed (`dfa05e7`), reuse check recorded as D-27 (`b7974e0`), both pushed to `shanelabountyai/triage` (public). CI workflow runs typecheck, policy:lint, fixtures:check, test, triage:eval on Node 22 with no secret. Spend to date: **$0**.
-
-### Step 1 — oracle check: all clean
-- `python3 tools/golden_answers.py` → OK (GT-01..14, GS-01..07, GP-01..08, GC-01..09, GD-01..12, GE-01..04 all `ok`).
-- `python3 tools/verify_fixtures.py` → `OK seed=20261019`; all ten sha256 equal brief §12 and `fixtures/MANIFEST.json`.
-- `python3 tools/reference_pipeline.py` output is byte-identical to `fixtures/samples/reference_pipeline.output.txt` (102 lines).
-- `shasum -a 256` on the five data files equals D-26 exactly.
-- Toolchain on this Mac: Python 3.14.6, Node 26.3.1 (CI pins 22; `engines >=22`), npm 11.16.0.
-
-### Step 2 — reuse check: recorded as D-27
-`reuse-scan.py check` parsed 0 proposed items (checkbox list, not a table); 434 built items indexed in 1 project; all three buckets `(none)`. Manual bucketing from the donor trees is in D-27: ADAPT for screen, prices/cost, roundHalfUp, provider pattern, split discipline; NEW for lint, parser, routing, ledger, drift, eval; REUSE verbatim none.
-
-### Step 3 — donor paths (read on disk; nothing resolved, Shane decides)
-- **use-case-studio: every path exists, one folder deeper than written.** The repo root is `~/Projects/usecasestudiofiles/use-case-studio/`, not `usecasestudiofiles/`; `src/lib/kickoff/{provider,claude,harness,invariants,judge,pricing,limits}.ts` and `vitest.config.ts` are all there. `getProvider`/`stubPlanner`/`stubCritic` and `callStructured` (one retry on a schema miss, refusal and truncation are failures) match the overlap doc. **Mismatch:** the overlap doc says live tests are excluded by `vitest.config.ts` `exclude`; that file excludes `integration/**` and `e2e/**` only. The three `*.live.test.ts` files skip themselves with `process.env.BK_LIVE === "1" && ANTHROPIC_API_KEY` at line 28. Triage's `vitest.config.ts` excludes `**/*.live.test.ts` outright, which is stricter than the donor.
-- **opsagent: every path exists.** `screen.py` `RULES`/`scan`/`DATA_POLICY` match; `scan` returns one hit per distinct matched text (several per rule), and triagelib's one-per-rule is the documented divergence in the review log. `ledger.py` `guard` projects units × runs × mean and refuses over `BUILD_BUDGET_USD` — matches. `redteam.py` two-number header matches. `tests/fakes.py` matches. `loop.py` line 116 has the `cache_control` on the system block (plus a top-level one). DECISIONS D-5, D-12, D-17, D-19, D-23, D-26, D-28, D-29 exist. **Mismatch:** `models.py` `cost_usd` is described as "over all usage kinds"; it covers input, output, cache read and 5m write only (no 1h write, no batch multiplier), and prices are floats. The port adds those three; that is the written reason for the fork.
-- **adjuster:** `src/rules/canonical.ts` matches (`canonicalJson`, `sha256Hex`, floats throw). `eval/README.md` and `eval/split.json` match (60 dev / 60 test, seeded). **Mismatch:** `src/intake/schema.ts` is a zod schema for the intake *schema-file* format (field kinds `text|date|cents|bool|serial`), not model-output parsing, and it is the only file under `src/intake/`. The "parse failure is a typed failure, every key required, enum case-insensitive" rules the overlap doc attributes to it live as prose in adjuster `CLAUDE.md` intake rules 1 and 10. Nothing to port as code there (and zod is a dependency Triage does not take).
-- **loanbook:** `src/ledger/money.ts` matches (`assertInteger`, `assertCents`, `roundHalfUp(bigint, bigint)` non-negative only, display by string).
-
-### Step 4 — contradictions and things that cannot be built as written (nothing changed; Shane decides)
-1. **Hash kind.** D-26 and task 1.3 say the TypeScript hash of `routing/policy.v1.json` "equals `sha256sum`", and `triagelib.content_hash` hashes the raw file bytes. Task 1.3 and the overlap doc say to port adjuster's canonical-JSON + sha256 for this. Canonical JSON of the policy hashes to a different value than its bytes. The two cannot both hold; proposed: hash bytes (matches D-26, `sha256sum`, the oracle, and the prompt which is not JSON), and do not port `canonicalJson` at all unless a ledger-row hash needs it later.
-2. **Cross-references inside two hashed data files.** `monitoring/drift.v1.json` description cites "section 8" and "D-17..D-19" (drift is brief §9 and D-20..D-21); `prompts/classify.v1.md` header cites "(D-20)" for the version-bump rule (D-20 is drift; the rule is D-6/D-16), and brief §7 repeats that miscite. Fixing either file changes a D-26 hash; fixing the prompt also changes its byte count, so the scripted prefix-token estimate (1,316) and every scripted usage line and fixture hash move. Proposed: leave both until a real prompt v2; fix the brief's §7 text only when the docs are next touched. Comment-only miscites in tools: `triagelib.py` labels cost "brief section 9" and drift "brief section 8" (swapped); `reference_pipeline.py` labels the sweep "(D-21)" (is D-16).
-3. **SPAM as a hard case.** Brief §3's hard-case table has a SPAM row (33 / 25) while the answer key and `MANIFEST.json` record spam tickets as `hard_case` NONE (the 539 / 300 NONE counts include them) and the reference output's hard-case table has no SPAM row. The eval must follow the key; the brief row is misleading. The 23% / 40% hard-case shares are computed without spam, consistent with the key.
-4. **Forbidden-import list differs by document.** CLAUDE.md non-negotiable 2 and task 1.7 forbid `node:fs` under `src/pipeline/`; PRD P0-1 and task 1.4's lint description omit it. Build the superset (CLAUDE.md).
-5. **Eval header text.** Task 1.11 wants `triage:eval` output equal to the reference file "line for line except the header's result-source hashes". Line 1 reads `triage reference pipeline  results=scripted …`, so literal equality means the TypeScript eval prints "triage reference pipeline" as its own header. Proposed default: print it verbatim so the diff is exact.
-6. **Secret-scan expectation is unreachable.** CLAUDE.md, D-5 and KICKOFF say `git ls-files | grep -iE "\.env$|secret|credential|\.pem$|\.key$"` "prints only `.env.example`". `.env.example` does not end in `.env`, so the command prints nothing (verified before both pushes). Empty output is the correct, stricter expectation; the sentence should say so.
-7. **Cost per 1,000 rounding.** Brief §8 and D-10 say one `round_half_up` over the exact rational; `reference_pipeline.py` floors to whole pico first (`cb * 1000 // n`) and then rounds to cents. Because every half-cent boundary is an integer number of pico, the two always give the same cents; the TypeScript eval will use the exact form and a test asserts equality with the oracle's columns.
-8. Minor: brief §5's rule table omits the `tag` verb (`label_directive`) and "ai reviewer" (`addressed_to_agent`) that the regexes carry; the port is of the regexes, not the table. `fixtures:check` runs `golden_answers.py` after `verify_fixtures.py`, which already runs it (harmless). README said D-1..D-26; now D-27 (fixed in this commit).
-
-### Step 7 — Phase 1 plan (order, donor per port, what Shane decides)
-Order follows the CLAUDE.md TDD chain; each task lands as one or two commits with its goldens as vitest tests under `tests/`, pure code under `src/pipeline/`, file I/O under `src/io/`, providers under `src/providers/`, CLIs in `scripts/`.
-1. **1.2** — already green on this checkout (`fixtures:check` OK) and enforced by CI; mark done at the gate, nothing to build.
-2. **1.3 numerics + hash, with lineage** — `src/pipeline/num.ts`: `roundHalfUp(num: bigint, den: bigint)` from loanbook `src/ledger/money.ts` (non-negative, bigint), plus `bps`, `picoToCents`, and `fmtBps` (integer digits only); `src/io/hash.ts`: sha256 over file bytes (see step 4 item 1, not adjuster's canonicalJson). Tests: GC-06..08 and the five D-26 hashes. Lineage rows into `docs/decisions.md`.
-3. **1.4 contracts and lint** — `src/io/load.ts` reads the four JSON files and the prompt; a ~60-line validator (object, string, integer, boolean, array, enum, required) in `src/pipeline/validate.ts`; `scripts/policy-lint.ts` does schema → D-26 hash check → grep of `src/pipeline/` for `fetch`, `anthropic`, `Date.now`, `Math.random`, `process.env`, `node:fs` → float lint (below). Test: one byte changed in a copy fails the hash check.
-4. **1.5 intake and screen** — `src/io/tickets.ts` (JSONL, per-line typed errors, `custom_id` regex); `src/pipeline/screen.ts` from opsagent `src/opsagent/screen.py` (eight rules in triagelib order, one hit per rule, first match). Tests: GS-01..07; all 1,200 tickets → exactly the 36 injection tickets flagged, 0 others.
-5. **1.6 result parsing** — `src/io/results.ts` reads Batches result lines; `src/pipeline/parse.ts` `parseResult(text)` with the D-8 codes; usage normalised to `{input, cacheRead, cacheCreation5m, cacheCreation1h, output}`. Tests: GP-01..08; the four fixture files' failure counts (b1: enum 6, JSON 3, errored 10; b2: 2, 2, 2 at A, 2 errored at B).
-6. **1.7 routing policy (pure)** — `src/pipeline/decide.ts`: `escalate`, `routeFor`, `decide` over the loaded policy object; reasons in brief §6 order, screen reasons as a sorted set. Tests: GT-01..14; batch 1 twice → identical decisions.
-7. **1.8 cost** — `src/pipeline/cost.ts` from opsagent `src/opsagent/models.py` shape: `priceRow`, `costPico` (BigInt), `estTokens` labelled estimate. Tests: GC-01..09; `cost_pico_batch`/`cost_pico_standard` reproduced for all 1,200 rows.
-8. **1.9 run and ledger** — provider type from use-case-studio `src/lib/kickoff/provider.ts` (`scripted`, `recorded`, `live` stub throwing `LIVE_NOT_AVAILABLE_IN_PHASE_1`); `scripts/run.ts` real; `data/runs.jsonl` row with the O-10 latency fields null. Test: batch 1 → 700 decisions equal to the CSV on every column.
-9. **1.10 overrides and drift** — `src/io/overrides.ts`; audit sample by the D-21 hash; `src/pipeline/drift.ts` `tvdBps`, `windowStats`, `driftSignals`; `scripts/drift-report.ts` real. Tests: GD-01..12; batch 2 vs 1 prints the eight values and fires the five.
-10. **1.11 `triage:eval`** — `src/pipeline/evalmath.ts` (`prf`, `eceBps`) + `scripts/eval.ts`; line-for-line equal to the reference file; non-zero exit on any per-ticket difference. Tests: GE-01..04; a diff of the full output.
-11. **1.12 `docs/EVAL.md` + gate proof** — table as printed by TypeScript, hashes, "scripted — designed error model"; throwaway branch with `min_confidence_bps_below` 7000 to show the red run, revert, link red and green runs here.
-
-**Float lint (proposed definition, task 1.4):** under `src/pipeline/`, forbid `Math.round|floor|ceil|trunc`, `toFixed`, `parseFloat`, `Number.parseFloat`, any numeric literal containing `.` or `e`, and the `/` operator anywhere except `src/pipeline/num.ts` (the one place that divides, over bigint). Greppable, no parser.
-
-**What Shane decides before `go`:**
-- Q1 `@types/node` as a dev dependency (type declarations for Node 22; zero runtime). It is in the lock already; say "remove" and the scripts drop to `lib: DOM` for `console`, which is worse.
-- Q2 Hash bytes, not canonical JSON (step 4 item 1). Default: bytes.
-- Q3 Eval line 1 prints "triage reference pipeline" verbatim (step 4 item 5). Default: verbatim.
-- Q4 The float-lint definition above. Default: as written.
-- Q5 Leave the two hashed-file miscites and the brief §3 SPAM row alone until a real v2 (step 4 items 2 and 3). Default: leave.
-- By hand (KICKOFF "Still to do"): the build-log card A5 with the chips from `docs/portfolio-overlap.md`.
-
-### Gate output at this checkpoint
-`npm run typecheck` 0 errors · `npm run policy:lint` stub, 0 checks · `npm run fixtures:check` OK (10 of 10 hashes, goldens OK) · `npm test` 0 files, exit 0 · `npm run triage:eval` "0 tickets", exit 0 · `triage:run` and `drift:report` stubs exit 0 (the `live` provider runs nothing). Secret scan before both pushes: empty. First CI run on `b7974e0`: **success**, https://github.com/shanelabountyai/triage/actions/runs/39287804273 (typecheck, policy:lint stub, fixtures:check, test, triage:eval; no secret).
