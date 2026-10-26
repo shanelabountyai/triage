@@ -6,13 +6,14 @@ import { dirname, join } from 'node:path';
 import { costPico, projectPico, type Prices } from '../pipeline/cost.js';
 import type { Policy } from '../pipeline/decide.js';
 import { percentile, picoToCents } from '../pipeline/num.js';
-import type { BatchResult } from '../pipeline/parse.js';
+import type { BatchResult, Usage } from '../pipeline/parse.js';
 import { needsTierB, runTickets } from '../pipeline/run.js';
 import type { Schema } from '../pipeline/validate.js';
-import { provider, stem, type Provider, type ProviderName } from '../providers/index.js';
-import { type BatchInfo, buildRequests, type LiveConfig, MAX_TOKENS } from '../providers/live.js';
+import { provider, stem, type Provider, type ProviderName, type Tier } from '../providers/index.js';
+import { type BatchInfo, type BatchRequest, buildRequests, type LiveConfig, MAX_TOKENS } from '../providers/live.js';
 import { type Caps, headroomPico, ledgerState } from './caps.js';
 import { sha256File, recordedHashes } from './hash.js';
+import { readResults } from './results.js';
 import { readTickets } from './tickets.js';
 
 export interface RunOptions {
@@ -20,6 +21,17 @@ export interface RunOptions {
   /** live only: builds the provider (scripts/run.ts passes liveFromEnv; tests pass a fake client) */
   live?: (c: Omit<LiveConfig, 'client'>) => Provider;
   caps?: Caps; acknowledgeOverCap?: boolean;
+}
+
+/** D-19: the ceiling projection (cache miss, MAX_TOKENS output each) must fit what both caps leave, or nothing is sent. */
+function assertProjected(tier: Tier, reqs: BatchRequest[], models: Record<Tier, string>, prices: Prices, caps: Caps, ledgerPico: bigint, spent: bigint): void {
+  const r0 = reqs[0]!.params; // the prefix is identical across the batch (non-negotiable 8; the provider asserts it)
+  const proj = projectPico(models[tier], r0.system[0]!.text + JSON.stringify(r0.output_config), reqs.map((r) => r.params.messages[0]!.content), MAX_TOKENS, prices);
+  const room = headroomPico(caps, ledgerPico, spent);
+  if (proj > room) {
+    throw new Error(`CAP_PROJECTION: tier ${tier}, ${reqs.length} requests project ${picoToCents(proj)}¢ (ceiling: cache miss, ${MAX_TOKENS} output tokens each) `
+      + `over ${picoToCents(room > 0n ? room : 0n)}¢ left (run cap ${caps.runCents}¢, project cap ${caps.projectCents}¢, ledger live spend ${picoToCents(ledgerPico)}¢); tier ${tier} was not sent`);
+  }
 }
 
 export async function triageRun(o: RunOptions) {
@@ -78,15 +90,7 @@ export async function triageRun(o: RunOptions) {
     const raw = o.live(lc), caps = o.caps;
     return async (tier, ts, inPath) => {
       if (!ts.length) return new Map<string, BatchResult>();
-      const reqs = buildRequests(tier, ts, lc);
-      const r0 = reqs[0]!.params; // the prefix is identical across the batch (non-negotiable 8; the provider asserts it)
-      const proj = projectPico(models[tier], r0.system[0]!.text + JSON.stringify(r0.output_config),
-        reqs.map((r) => r.params.messages[0]!.content), MAX_TOKENS, c.prices);
-      const room = headroomPico(caps, ledger.livePico, spent);
-      if (proj > room) {
-        throw new Error(`CAP_PROJECTION: tier ${tier}, ${ts.length} requests project ${picoToCents(proj)}¢ (ceiling: cache miss, ${MAX_TOKENS} output tokens each) `
-          + `over ${picoToCents(room > 0n ? room : 0n)}¢ left (run cap ${caps.runCents}¢, project cap ${caps.projectCents}¢, ledger live spend ${picoToCents(ledger.livePico)}¢); tier ${tier} was not sent`);
-      }
+      assertProjected(tier, buildRequests(tier, ts, lc), models, c.prices, caps, ledger.livePico, spent);
       const res = await raw(tier, ts, inPath);
       for (const r of res.values()) spent += costPico(r.model ?? models[tier], r.usage, true, c.prices);
       return res;
@@ -131,4 +135,76 @@ export async function triageRun(o: RunOptions) {
   };
   append(row);
   return { rows, row };
+}
+
+export interface TopUpOptions {
+  inPath: string; ledgerPath: string; now: () => string; root?: string;
+  live: (c: Omit<LiveConfig, 'client'>) => Provider; caps: Caps; acknowledgeOverCap?: boolean;
+}
+
+/**
+ * Task 2.9 (D-50): tier B over the tickets the recorded run did NOT escalate, so the threshold sweep can measure a T above
+ * the policy's. Tier A is replayed from the recording; the new Sonnet lines are appended to its tierB.jsonl and the batch
+ * is noted under meta.json `topup`. The decisions at the policy T do not change (runTickets reads tier B for escalated
+ * tickets only), so decisions.jsonl is untouched and the D-49 hold still applies. Same caps, same latch, own ledger row.
+ */
+export async function topUpTierB(o: TopUpOptions) {
+  const root = o.root ?? '.';
+  const json = <T>(p: string): T => JSON.parse(readFileSync(join(root, p), 'utf8')) as T;
+  const c = { policy: json<Policy>('routing/policy.v1.json'), prices: json<Prices>('pricing/prices.v1.json'), schema: json<Schema>('schemas/triage.v1.json') };
+  const models = { A: c.policy.tiers.A.model, B: c.policy.tiers.B.model };
+  const started = o.now();
+  const recDir = join(root, 'recordings', stem(o.inPath).replace(/\.jsonl$/, ''));
+  const tierB = join(recDir, 'tierB.jsonl'), metaPath = join(recDir, 'meta.json');
+  if (!existsSync(tierB) || !existsSync(metaPath)) throw new Error(`TOPUP_NO_RECORDING: ${recDir} has no tierB.jsonl and meta.json to top up; nothing was sent`);
+  const meta = json<Record<string, unknown>>(join('recordings', stem(o.inPath).replace(/\.jsonl$/, ''), 'meta.json'));
+  if (meta['topup']) throw new Error(`TOPUP_EXISTS: ${metaPath} already records a top-up; a recording is never overwritten; nothing was sent`);
+  const ledger = ledgerState(o.ledgerPath);
+  if (ledger.overCap.length && !o.acknowledgeOverCap) {
+    throw new Error(`CAP_LATCHED: ${ledger.overCap.join(', ')} went OVER_CAP; pass --acknowledge-over-cap to run again (D-19); nothing was sent`);
+  }
+
+  const { tickets, errors } = readTickets(o.inPath);
+  for (const e of errors) console.error(`intake line ${e.line}: ${e.code} ${e.detail}`);
+  const ra = await provider('recorded', root)('A', tickets, o.inPath);
+  const escalated = new Set(needsTierB(tickets, ra, c).map((t) => t.ticket_id));
+  const targets = tickets.filter((t) => !escalated.has(t.ticket_id));
+  const have = readResults(tierB).results;
+  const dup = targets.filter((t) => have.has(t.ticket_id)).length;
+  if (dup) throw new Error(`TOPUP_EXISTS: ${dup} of ${targets.length} target tickets already have a tier-B line in ${tierB}; nothing was sent`);
+  if (!targets.length) throw new Error('TOPUP_EMPTY: every ticket was escalated, so tier B already covers the batch; nothing was sent');
+
+  let batch: BatchInfo | undefined;
+  const onBatch = (b: BatchInfo) => {
+    appendFileSync(tierB, b.lines.map((l) => l + '\n').join('')); // after the recorded lines, never over them
+    batch = b;
+  };
+  const lc = { models, system: readFileSync(join(root, 'prompts/classify.v1.md'), 'utf8'), schema: c.schema as Record<string, unknown>, onBatch };
+  const raw = o.live(lc); // refuses without TRIAGE_LIVE=1 and a key, before the projection does any work
+  assertProjected('B', buildRequests('B', targets, lc), models, c.prices, o.caps, ledger.livePico, 0n);
+  // ponytail: a batch created but never read back (poll or stream failure) is not on the ledger; reconcile from the console
+  const rb = await raw('B', targets, o.inPath);
+
+  const tokens: Usage = { input: 0, cacheRead: 0, cacheCreation5m: 0, cacheCreation1h: 0, output: 0 };
+  let cost = 0n;
+  for (const r of rb.values()) {
+    cost += costPico(r.model ?? models.B, r.usage, true, c.prices);
+    for (const k of Object.keys(tokens) as (keyof Usage)[]) tokens[k] += r.usage?.[k] ?? 0;
+  }
+  const stamp = (ms: number) => new Date(ms).toISOString();
+  const b = batch!, run_id = `${started.replace(/[-:]/g, '')}-live`;
+  const times = { submitted_at: stamp(b.submittedMs), completed_at: stamp(b.completedMs), latency_s_p50: Math.round((b.completedMs - b.submittedMs) / 1000), latency_s_p95: Math.round((b.completedMs - b.submittedMs) / 1000) };
+  writeFileSync(metaPath, JSON.stringify({ ...meta, topup: { run_id, tier: 'B', batch_id: b.batchId, requests: b.requests, ...times } }, null, 2) + '\n');
+  const row = {
+    run_id, provider: 'live' as const, topup_of: recDir, input: o.inPath, input_sha256: sha256File(o.inPath), out: null, models,
+    hashes: Object.fromEntries(Object.keys(recordedHashes(join(root, 'docs/decisions.md'))).map((f) => [f, sha256File(join(root, f))])),
+    audit_seed: null, tickets: targets.length, intake_errors: errors.length,
+    tokens: { input: tokens.input, cache_read: tokens.cacheRead, cache_write_5m: tokens.cacheCreation5m, cache_write_1h: tokens.cacheCreation1h, output: tokens.output },
+    cost_pico_batch: String(cost), cost_cents: picoToCents(cost),
+    cap_status: cost > headroomPico(o.caps, ledger.livePico, 0n) ? 'OVER_CAP' : 'OK', acknowledges: o.acknowledgeOverCap ? ledger.overCap : [],
+    started_at: started, finished_at: o.now(), ...times,
+  };
+  mkdirSync(dirname(o.ledgerPath), { recursive: true });
+  appendFileSync(o.ledgerPath, JSON.stringify(row) + '\n');
+  return { row, targets: targets.length, escalated: escalated.size };
 }

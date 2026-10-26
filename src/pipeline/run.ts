@@ -29,7 +29,7 @@ export function auditSampled(ticketId: string, seed: number, shareBps: number): 
 }
 
 /** The tickets tier B is asked about: those whose tier A result escalates. */
-export const needsTierB = <T extends TicketText>(tickets: T[], ra: Map<string, BatchResult>, c: RunConfig): T[] =>
+export const needsTierB = <T extends TicketText>(tickets: T[], ra: Map<string, BatchResult>, c: Pick<RunConfig, 'policy' | 'schema'>): T[] =>
   tickets.filter((t) => escalate(tierResult(ra.get(t.ticket_id), c.schema), c.policy).escalate);
 
 export function runTickets(tickets: TicketText[], ra: Map<string, BatchResult>, rb: Map<string, BatchResult>, c: RunConfig) {

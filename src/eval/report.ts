@@ -20,7 +20,7 @@ import { readTickets } from '../io/tickets.js';
 
 const SEED = 20261019;
 type Row = Record<string, string>;
-type Meta = { run_id: string; models: Record<string, string>; hashes: Record<string, string>; tiers: Record<string, { batch_id: string; requests: number }> };
+type Meta = { run_id: string; models: Record<string, string>; hashes: Record<string, string>; tiers: Record<string, { batch_id: string; requests: number }>; topup?: { batch_id: string; requests: number } };
 
 /** RFC 4180 enough for the fixtures: quoted fields with "" escapes (attacker_wants is JSON), no newlines in a field. */
 export function parseCsv(text: string): Row[] {
@@ -105,6 +105,7 @@ export async function evalReport(providerName: ProviderName, root = '.') {
         .concat((['A', 'B'] as const).filter((t) => meta.models[t] !== policy.tiers[t].model).map((t) => `model ${t}`));
       P(`recording: run ${meta.run_id}  models A ${meta.models['A']} B ${meta.models['B']}  `
         + `batches ${(['A', 'B'] as const).map((t) => `${t} ${meta.tiers[t]?.batch_id ?? 'none'} (${meta.tiers[t]?.requests ?? 0} requests)`).join('  ')}  `
+        + (meta.topup ? `top-up B ${meta.topup.batch_id} (${meta.topup.requests} requests over the non-escalated tickets, for the sweep; D-50)  ` : '')
         + `held to recordings/batch${n}/decisions.jsonl  ${stale.length ? `STALE: recorded under a different ${stale.join(', ')}` : 'prompt, schema and model ids current'}`);
     }
     const tally = (xs: string[]) => [...xs.reduce((mm, x) => mm.set(x, (mm.get(x) ?? 0) + 1), new Map<string, number>())].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
