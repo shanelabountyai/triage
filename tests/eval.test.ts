@@ -56,13 +56,21 @@ describe('triage:eval (recorded, D-49)', () => {
     expect(a.lines.filter((l) => l.startsWith('recording: run ') && l.endsWith('prompt, schema and model ids current'))).toHaveLength(2);
   }, 30_000);
 
-  it('marks sweep rows above the recorded T as n/a instead of counting unsent tier-B requests as failures', async () => {
+  it('every sweep row is measured once the top-up covers tier B for all of batch 1 (D-50); without it, rows above T are n/a', async () => {
     const { lines } = await evalReport('recorded');
     const sweep = lines.filter((l) => /^  \d{4} /.test(l));
     expect(sweep).toHaveLength(8);
-    expect(sweep.slice(0, 4).every((l) => !l.includes('n/a'))).toBe(true);
-    expect(sweep.slice(4).every((l) => / escalated tickets have no recorded tier-B result$/.test(l))).toBe(true);
-  }, 30_000);
+    expect(sweep.every((l) => !l.includes('n/a'))).toBe(true);
+    expect(lines.find((l) => l.startsWith('recording: run '))).toContain('top-up B msgbatch_');
+
+    const root = mkdtempSync(join(tmpdir(), 'triage-eval-topup-'));
+    for (const d of ['fixtures', 'routing', 'pricing', 'schemas', 'monitoring', 'prompts', 'recordings']) cpSync(d, join(root, d), { recursive: true });
+    const p = join(root, 'recordings/batch1/tierB.jsonl');
+    writeFileSync(p, readFileSync(p, 'utf8').split('\n').slice(0, 424).join('\n') + '\n'); // the recorded lines only, as before the top-up
+    const without = (await evalReport('recorded', root)).lines.filter((l) => /^  \d{4} /.test(l));
+    expect(without.slice(0, 4).every((l) => !l.includes('n/a'))).toBe(true);
+    expect(without.slice(4).every((l) => / escalated tickets have no recorded tier-B result$/.test(l))).toBe(true);
+  }, 60_000);
 
   it('reports a per-ticket difference when a committed decision is edited', async () => {
     const root = mkdtempSync(join(tmpdir(), 'triage-eval-rec-'));

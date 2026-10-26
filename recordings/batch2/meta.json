@@ -28,5 +28,15 @@
       "submitted_at": "2026-10-25T14:51:21.136Z",
       "completed_at": "2026-10-25T14:58:24.624Z"
     }
+  },
+  "topup": {
+    "run_id": "20261026T151054.684Z-live",
+    "tier": "B",
+    "batch_id": "msgbatch_01Uj78ojAaJX4bbi4k4F866q",
+    "requests": 130,
+    "submitted_at": "2026-10-26T15:10:54.989Z",
+    "completed_at": "2026-10-26T15:16:57.533Z",
+    "latency_s_p50": 363,
+    "latency_s_p95": 363
   }
 }
