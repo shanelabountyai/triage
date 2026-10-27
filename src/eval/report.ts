@@ -4,7 +4,7 @@
 // A scripted run is held to fixtures/decisions_batch{1,2}.csv (D-38); a recorded run to the decisions the live run itself
 // took, recordings/batch{1,2}/decisions.jsonl (D-49). Everything printed only for `recorded` keeps scripted stdout
 // byte-identical to the reference file.
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Prices } from '../pipeline/cost.js';
 import { routeFor, type Policy } from '../pipeline/decide.js';
@@ -16,6 +16,7 @@ import { runTickets, type DecisionRow, type RunConfig } from '../pipeline/run.js
 import type { Schema } from '../pipeline/validate.js';
 import { provider, type ProviderName } from '../providers/index.js';
 import { sha256File } from '../io/hash.js';
+import { SHANE30, shane30Lines, type Shane30 } from './shane30.js';
 import { readTickets } from '../io/tickets.js';
 
 const SEED = 20261019;
@@ -220,9 +221,16 @@ export async function evalReport(providerName: ProviderName, root = '.') {
       : `${fmtBps(accOf(auto)).padStart(7)} of ${String(auto.length).padStart(3)}        ${String(hq).padStart(4)} (${pct(hq, m).padStart(7)})   ${String(per1k(sum(dev), m)).padStart(6)}`;
     P(`  ${String(T).padEnd(5)} ${String(esc).padStart(4)} (${pct(esc, m).padStart(7)})   ${measured}`);
   }
-  const test = split(runTickets(b1.tickets, b1.ra, b1.rb, c).rows, 'test');
+  const b1rows = runTickets(b1.tickets, b1.ra, b1.rb, c).rows;
+  const test = split(b1rows, 'test');
   const auto = test.filter((r) => !r.needs_human);
   P(`at policy T=${thr}, batch 1 TEST split: n ${test.length}  delivered category accuracy ${fmtBps(accOf(auto))} of ${auto.length} auto-handled  human queue ${test.length - auto.length}`);
+
+  // Shane's 30 (D-24): a person's reading of the first recording's human queue. Recorded only, so scripted stdout stays byte-identical.
+  if (providerName === 'recorded' && existsSync(join(root, SHANE30))) {
+    P('');
+    for (const l of shane30Lines(json<Shane30>(SHANE30), new Map(b1rows.map((r) => [r.ticket_id, r])))) P(l);
+  }
 
   P('');
   P('drift: batch 2 window vs batch 1 baseline (monitoring/drift.v1.json)');

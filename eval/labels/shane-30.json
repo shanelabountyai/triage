@@ -1,0 +1,369 @@
+{
+  "picked_from": "recordings/batch1/decisions.jsonl",
+  "pick": "30 of 288 human-queue tickets, first 30 by sha256('20261019:shane30:<ticket_id>')",
+  "judged_on": null,
+  "tickets": [
+    {
+      "ticket_id": "B1-0641",
+      "pipeline_reasons": [
+        "human:low_confidence_3000"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0532",
+      "pipeline_reasons": [
+        "human:low_confidence_1200"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0083",
+      "pipeline_reasons": [
+        "human:model_says",
+        "human:priority_P1"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0348",
+      "pipeline_reasons": [
+        "human:low_confidence_1500"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0523",
+      "pipeline_reasons": [
+        "human:model_says"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0673",
+      "pipeline_reasons": [
+        "human:low_confidence_2000"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0272",
+      "pipeline_reasons": [
+        "human:model_says",
+        "human:category_PRIVACY_DATA",
+        "human:low_confidence_5500"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0128",
+      "pipeline_reasons": [
+        "human:model_says"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0435",
+      "pipeline_reasons": [
+        "human:model_says",
+        "human:language_fr"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0566",
+      "pipeline_reasons": [
+        "human:model_says"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0338",
+      "pipeline_reasons": [
+        "human:model_says",
+        "human:language_es"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0580",
+      "pipeline_reasons": [
+        "human:model_says",
+        "human:priority_P1"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0385",
+      "pipeline_reasons": [
+        "human:model_says",
+        "human:category_PRIVACY_DATA",
+        "human:low_confidence_5500"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0370",
+      "pipeline_reasons": [
+        "human:model_says",
+        "human:low_confidence_5500"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0335",
+      "pipeline_reasons": [
+        "human:low_confidence_5500"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0013",
+      "pipeline_reasons": [
+        "human:model_says",
+        "human:screen_flagged"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0116",
+      "pipeline_reasons": [
+        "human:low_confidence_5500"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0308",
+      "pipeline_reasons": [
+        "human:model_says",
+        "human:language_fr"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0618",
+      "pipeline_reasons": [
+        "human:model_says",
+        "human:screen_flagged"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0637",
+      "pipeline_reasons": [
+        "human:model_says",
+        "human:language_de"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0024",
+      "pipeline_reasons": [
+        "human:low_confidence_1500"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0140",
+      "pipeline_reasons": [
+        "human:model_says",
+        "human:low_confidence_5500"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0571",
+      "pipeline_reasons": [
+        "human:low_confidence_2500"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0210",
+      "pipeline_reasons": [
+        "human:model_says"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0025",
+      "pipeline_reasons": [
+        "human:low_confidence_2000"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0131",
+      "pipeline_reasons": [
+        "human:model_says",
+        "human:screen_flagged"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0584",
+      "pipeline_reasons": [
+        "human:model_says",
+        "human:category_PRIVACY_DATA"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0284",
+      "pipeline_reasons": [
+        "human:model_says",
+        "human:screen_flagged"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0691",
+      "pipeline_reasons": [
+        "human:low_confidence_5500"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    },
+    {
+      "ticket_id": "B1-0527",
+      "pipeline_reasons": [
+        "human:low_confidence_5500"
+      ],
+      "needs_human": null,
+      "agrees_with_pipeline_reason": null,
+      "labels_ok": null,
+      "note": ""
+    }
+  ],
+  "false_negative_templates": [
+    {
+      "template_id": "AMB-05",
+      "ticket_ids": [
+        "B1-0047",
+        "B1-0427",
+        "B1-0555",
+        "B1-0582"
+      ],
+      "body": "How do deposits work? Who keeps the money if a client no-shows and do you charge us a fee?",
+      "pipeline": {
+        "needs_human": false,
+        "category": "HOW_TO"
+      },
+      "key": {
+        "needs_human": true,
+        "category": "BILLING"
+      },
+      "needs_human": null,
+      "category": null,
+      "note": ""
+    },
+    {
+      "template_id": "AMB-07",
+      "ticket_ids": [
+        "B1-0464",
+        "B1-0479",
+        "B1-0502",
+        "B1-0689",
+        "B1-0700"
+      ],
+      "body": "Can two clients book one slot together, like a couples massage? If not, could that be added?",
+      "pipeline": {
+        "needs_human": false,
+        "category": "FEATURE_REQUEST"
+      },
+      "key": {
+        "needs_human": true,
+        "category": "FEATURE_REQUEST"
+      },
+      "needs_human": null,
+      "category": null,
+      "note": ""
+    }
+  ]
+}

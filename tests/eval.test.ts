@@ -4,6 +4,8 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { evalReport, parseCsv } from '../src/eval/report.js';
 import { recordedHashes } from '../src/io/hash.js';
+import { pickShane30, SHANE30, shane30Lines, type Shane30 } from '../src/eval/shane30.js';
+import type { DecisionRow } from '../src/pipeline/run.js';
 import type { Policy } from '../src/pipeline/decide.js';
 import { routeFor } from '../src/pipeline/decide.js';
 import { eceBps, prf } from '../src/pipeline/evalmath.js';
@@ -83,4 +85,18 @@ describe('triage:eval (recorded, D-49)', () => {
     expect(r.diffs).toHaveLength(1);
     expect(r.diffs[0]).toContain('batch 2 recordings/batch2/decisions.jsonl line 4');
   }, 30_000);
+
+  it('Shane\'s 30 (D-24): the committed pick is the seeded-hash pick over the human queue, and the eval prints its section', async () => {
+    const s = JSON.parse(readFileSync(SHANE30, 'utf8')) as Shane30;
+    const rows = readFileSync('recordings/batch1/decisions.jsonl', 'utf8').trim().split('\n').map((l) => JSON.parse(l) as DecisionRow);
+    const pick = pickShane30(rows, 20261019);
+    expect(pick).toHaveLength(30);
+    expect(pick.every((r) => r.needs_human)).toBe(true);
+    expect(s.tickets.map((t) => t.ticket_id)).toEqual(pick.map((r) => r.ticket_id));
+    expect((await evalReport('recorded')).lines.find((l) => l.startsWith("Shane's 30 ("))).toContain('judged ');
+    expect((await evalReport('scripted')).lines.find((l) => l.startsWith("Shane's 30 ("))).toBeUndefined();
+    const fake: Shane30 = { ...s, tickets: s.tickets.map((t, i) => ({ ...t, needs_human: i % 3 !== 0, agrees_with_pipeline_reason: i % 3 === 1, labels_ok: true })) };
+    expect(shane30Lines(fake, new Map(rows.map((r) => [r.ticket_id, r])))[0])
+      .toContain('judged 30 of 30  human needed 20 (66.67%)  would have auto-handled 10 (33.33%)  pipeline reason agreed 10 of 20 human  labels ok 30 of 30');
+  }, 60_000);
 });
