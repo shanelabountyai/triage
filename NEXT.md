@@ -1,6 +1,17 @@
 # NEXT
 
-## ▶ Next session: task 2.11 (`docs/phase-2-tasks.md`) — `docs/EVAL.md`, scripted and recorded side by side
+## ▶ Next session: Phase 2 gate review, then Phase 3 (`docs/phase-3-tasks.md`)
+
+**2026-10-27: task 2.11 done. Phase 2 exit criteria all met. Spend to date 127¢ (nothing spent this session).** `docs/EVAL.md` rewritten with scripted and recorded side by side: headline table against the D-22 targets, full table, per-category and per-priority, the sweep in both columns, Shane's 30, drift, the D-26 hashes, the fixture hashes, a recordings table (run ids, batch ids, tier-file and `decisions.jsonl` sha256s, the pre-D-51 policy hash the recordings were made under) and both verbatim outputs. Recorded column: needs_human recall 203/203 and 217/217, P1 missed 0 of 42 and 0 of 70, delivered category accuracy 375/391 (95.91%) and 190/197 (96.45%), batch 1 test split 96.23% of 159, queue 44.14% and 60.60%, 66¢ and 79¢ per 1,000, cache-read share 96.83% and 96.84%. Scripted column unchanged and labelled a plumbing check (D-23). No code changed; no hash moved; no decisions entry needed.
+
+**Phase 3 task list drafted at the gate: `docs/phase-3-tasks.md`, pending Shane's review.** 3.0 reuse scan · 3.1 ledger views · 3.2 override intake CLI · 3.3 drift over a sliding window of runs · 3.4 `node:http` handler for N9 on port **6300** (proposed; add the global table row with the config) · 3.5 synchronous `messages` provider (O-10, spends a little) · 3.6 Footnote hand-off doc · 3.7 the carried items decided · 3.8 README refresh. **Open for review before 3.4:** port 6300 or another; bearer token from env or localhost-only; whether 3.5 spends in this phase; `--last N` as runs, not days. Start the next session by taking those four answers, then `/model` per item and 3.0.
+
+**Open, carried (now 3.7):** (1) one `max_tokens` stop per batch on Sonnet, counted as `FINAL_TIER_FAILED:PARSE_JSON` (D-8). (2) D-48 restore note: run cap 400¢ → 300¢; the real tier-B costs are known (42¢, 36¢, top-ups 25¢, 12¢). (3) Refusal smokes must move `.env.local` aside: `scripts/run.ts` loads it for any `live` run (D-50 process note). (4) B1-0584 was judged "human, other reason" with no note.
+
+Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 14 files, 88 tests passed · triage:eval scripted 1,200 of 1,200 equal and stdout byte-identical, exit 0 · triage:eval recorded 1,200 of 1,200 equal to `recordings/batch{1,2}/decisions.jsonl`, exit 0. Spend to date: **127¢** of the 1500¢ project cap.
+
+## Older
+
 
 **2026-10-27: task 2.10 done (D-51). Spend to date 127¢ (nothing spent this session).** Shane's 30 recorded in `eval/labels/shane-30.json` (30 of batch 1's 288 human-queue tickets as of commit 0081758, by seeded hash; `npm run shane:pick` made the file once and refuses to overwrite): **30 of 30 human-needed, 0 of 30 would have auto-handled, pipeline reason agreed 29 of 30**, labels ok 30 of 30. Both false-negative templates (AMB-05, AMB-07) judged "a person should see it", so the key stands and the 18 misses were closed by a policy rule, not a prompt change: `needs_human_when.secondary_with_category_in: [HOW_TO, FEATURE_REQUEST]`, reason `human:secondary_<secondary>`, GT-15. O-3 stays 7500.
 
@@ -12,7 +23,7 @@ Recorded, answer key as judge, after D-51 (before in brackets): needs_human reca
 
 Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 14 files, 88 tests passed · triage:eval scripted 1,200 of 1,200 equal and stdout byte-identical, exit 0 · triage:eval recorded 1,200 of 1,200 equal to `recordings/batch{1,2}/decisions.jsonl`, exit 0, every sweep row measured. Spend to date: **127¢** of the 1500¢ project cap.
 
-## Older
+
 
 **2026-10-26: task 2.9 done (D-50). T stays 7500. Spend to date 127¢** (ledger: 4¢ INCOMPLETE + 46¢ + 40¢ + top-ups 25¢ + 12¢). The recorded sweep was only measurable at T ≤ 7500 because a recording holds Sonnet lines for escalated tickets only; the rows above replayed as tier-B failures. Fixed by (1) printing `n/a` on an unmeasurable row and (2) `triage:run --provider live --top-up-tier-b`, which sent Sonnet the 276 + 130 non-escalated tickets and appended them to `recordings/batch{1,2}/tierB.jsonl` (meta.json `topup`, own ledger rows). Decisions unchanged: 1,200 of 1,200 still equal.
 
