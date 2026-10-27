@@ -1,6 +1,18 @@
 # NEXT
 
-## ▶ Next session: task 2.10 (`docs/phase-2-tasks.md`) — Shane's 30 (D-24), then re-decide O-3 and the needs_human rules
+## ▶ Next session: task 2.11 (`docs/phase-2-tasks.md`) — `docs/EVAL.md`, scripted and recorded side by side
+
+**2026-10-27: task 2.10 done (D-51). Spend to date 127¢ (nothing spent this session).** Shane's 30 recorded in `eval/labels/shane-30.json` (30 of batch 1's 288 human-queue tickets as of commit 0081758, by seeded hash; `npm run shane:pick` made the file once and refuses to overwrite): **30 of 30 human-needed, 0 of 30 would have auto-handled, pipeline reason agreed 29 of 30**, labels ok 30 of 30. Both false-negative templates (AMB-05, AMB-07) judged "a person should see it", so the key stands and the 18 misses were closed by a policy rule, not a prompt change: `needs_human_when.secondary_with_category_in: [HOW_TO, FEATURE_REQUEST]`, reason `human:secondary_<secondary>`, GT-15. O-3 stays 7500.
+
+Recorded, answer key as judge, after D-51 (before in brackets): needs_human recall **203/203** [194/203] and **217/217** [208/217]; human queue 309 of 700 (44.14%) [288] and 303 of 500 (60.60%) [277]; delivered category accuracy 375/391 (95.91%) [94.90% of 412] and 190/197 (96.45%) [94.62% of 223]; batch 1 test split 96.23% of 159 [94.15% of 171]; P1 missed 0 of 42 and 0 of 70; cents per 1,000 unchanged at 66 and 79. 29 of the 47 tickets the rule moved are key-auto (over-flags). `triage:eval --provider recorded` prints the Shane's 30 section (recorded only; scripted stdout still byte-identical to the oracle).
+
+**For 2.11:** rewrite `docs/EVAL.md` with the scripted and recorded columns side by side, each with its denominator, its source and its fixture or recording hash; the recorded column is the first real measurement, the scripted column stays labelled a plumbing check (D-23). Sources: `npm run -s triage:eval` and `npm run -s triage:eval -- --provider recorded` (both exit 0, 1,200 of 1,200 equal); brief §11 for the table shape; D-49, D-50, D-51 for the numbers' history. EVAL.md's hashes and verbatim scripted output were already refreshed for D-51; its recorded half does not exist yet. Then the Phase 2 exit criteria are all met; write the Phase 3 task list at the gate and stop for review.
+
+**Open, carried:** (1) one `max_tokens` stop per batch on Sonnet, counted as `FINAL_TIER_FAILED:PARSE_JSON` (D-8). (2) D-48 restore note: run cap 400¢ → 300¢; the real tier-B costs are known (42¢, 36¢, top-ups 25¢, 12¢ against ceilings of 312¢ and ~206¢). (3) Refusal smokes must move `.env.local` aside: `scripts/run.ts` loads it for any `live` run (D-50 process note). (4) B1-0584 was judged "human, other reason" with no note; same text as two tickets judged "reason right".
+
+Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 14 files, 88 tests passed · triage:eval scripted 1,200 of 1,200 equal and stdout byte-identical, exit 0 · triage:eval recorded 1,200 of 1,200 equal to `recordings/batch{1,2}/decisions.jsonl`, exit 0, every sweep row measured. Spend to date: **127¢** of the 1500¢ project cap.
+
+## Older
 
 **2026-10-26: task 2.9 done (D-50). T stays 7500. Spend to date 127¢** (ledger: 4¢ INCOMPLETE + 46¢ + 40¢ + top-ups 25¢ + 12¢). The recorded sweep was only measurable at T ≤ 7500 because a recording holds Sonnet lines for escalated tickets only; the rows above replayed as tier-B failures. Fixed by (1) printing `n/a` on an unmeasurable row and (2) `triage:run --provider live --top-up-tier-b`, which sent Sonnet the 276 + 130 non-escalated tickets and appended them to `recordings/batch{1,2}/tierB.jsonl` (meta.json `topup`, own ledger rows). Decisions unchanged: 1,200 of 1,200 still equal.
 
@@ -11,8 +23,6 @@ Sweep, batch 1 dev split, recorded (D-50): 7000 → 93.80% of 258 auto-handled a
 **Open, carried:** (1) one `max_tokens` stop per batch on Sonnet, counted as `FINAL_TIER_FAILED:PARSE_JSON` (D-8). (2) D-48 restore note: run cap 400¢ → 300¢; the real tier-B costs are now known (42¢, 36¢, top-ups 25¢, 12¢ against ceilings of 312¢ and ~206¢), so this can be judged. (3) Refusal smokes must move `.env.local` aside: `scripts/run.ts` loads it for any `live` run (D-50 process note).
 
 Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 14 files, 87 tests passed · triage:eval scripted 1,200 of 1,200 equal and stdout byte-identical, exit 0 · triage:eval recorded 1,200 of 1,200 equal to `recordings/batch{1,2}/decisions.jsonl`, exit 0, every sweep row measured. Spend to date: **127¢** of the 1500¢ project cap.
-
-## Older
 
 **2026-10-25: task 2.8 done (D-49). Spend to date 90¢ (nothing spent this session).** `triage:eval --provider recorded` is held to `recordings/batch{1,2}/decisions.jsonl`, the live run's own decisions (the recorder now writes that file; the two first recordings got theirs from `data/live/`). Replay: 1,200 of 1,200 equal, deterministic, in CI without a key. Recorded-only lines: NOTE, `recording:` (run id, model and batch ids, STALE check on prompt/schema/model ids) and `cache (from usage fields):`. Scripted stdout stays byte-identical to the reference.
 
