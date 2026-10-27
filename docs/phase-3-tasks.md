@@ -1,6 +1,6 @@
 # Phase 3 — Operate: ledger views, overrides, drift over runs, HTTP for N9
 
-Drafted at the Phase 2 gate (2026-10-27), **pending Shane's review; nothing below is started.** Phase 2 closed with both recordings committed, `triage:eval --provider recorded` green in CI with no key, real cost and cache-read share printed, Shane's 30 recorded and `docs/EVAL.md` showing both columns. Spend to date 127¢ of 1500¢.
+Drafted at the Phase 2 gate (2026-10-27); **reviewed, four open questions answered (D-52); nothing below is started.** Phase 2 closed with both recordings committed, `triage:eval --provider recorded` green in CI with no key, real cost and cache-read share printed, Shane's 30 recorded and `docs/EVAL.md` showing both columns. Spend to date 127¢ of 1500¢.
 
 Phase 3 makes the pipeline something an operator and N9 can use without reading the repo. Everything here is replayable from `recordings/` and `fixtures/`; only 3.5 can spend money, under the same caps and flag (D-19). `src/pipeline/` stays pure; the HTTP handler, the ledger views and the override CLI live under `src/io/` and `scripts/`. Port before you write: check `docs/portfolio-overlap.md` and the donors it names for each item, and record the lineage in `docs/decisions.md`.
 
@@ -18,4 +18,4 @@ Phase 3 makes the pipeline something an operator and N9 can use without reading 
 
 **Before Phase 4 or closure:** Phase 4 (experiments: prompt v2 on the same recordings, per-category thresholds, a privacy tier, 5m vs 1h cache in cents) is optional and each item is a scorecard, not a product change. Closure needs the four deliverables in `~/.claude/CLAUDE.md` *Definition of done*: `docs/DEMO.md` with every command run once, the exec-brief artifact, the LinkedIn drafts mined from D-49/D-50/D-51, and the cost review (nothing bills today: no deploy, no cron, no database; the key is the only thing to list).
 
-**Open for review (decide before 3.4 starts):** port 6300 or another; bearer token from env or no auth on localhost only; whether 3.5 spends in this phase at all; `--last N` as runs, not days.
+**Answered at the gate (D-52, 2026-10-27):** port 6300; bearer token from `TRIAGE_HTTP_TOKEN`; 3.5 spends one 5-ticket smoke (~1¢); `--last N` is N runs.
