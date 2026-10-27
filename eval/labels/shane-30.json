@@ -1,16 +1,16 @@
 {
   "picked_from": "recordings/batch1/decisions.jsonl",
   "pick": "30 of 288 human-queue tickets, first 30 by sha256('20261019:shane30:<ticket_id>')",
-  "judged_on": null,
+  "judged_on": "2026-10-27",
   "tickets": [
     {
       "ticket_id": "B1-0641",
       "pipeline_reasons": [
         "human:low_confidence_3000"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     },
     {
@@ -18,9 +18,9 @@
       "pipeline_reasons": [
         "human:low_confidence_1200"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     },
     {
@@ -29,9 +29,9 @@
         "human:model_says",
         "human:priority_P1"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     },
     {
@@ -39,9 +39,9 @@
       "pipeline_reasons": [
         "human:low_confidence_1500"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     },
     {
@@ -49,9 +49,9 @@
       "pipeline_reasons": [
         "human:model_says"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     },
     {
@@ -59,9 +59,9 @@
       "pipeline_reasons": [
         "human:low_confidence_2000"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     },
     {
@@ -71,9 +71,9 @@
         "human:category_PRIVACY_DATA",
         "human:low_confidence_5500"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     },
     {
@@ -81,9 +81,9 @@
       "pipeline_reasons": [
         "human:model_says"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     },
     {
@@ -92,9 +92,9 @@
         "human:model_says",
         "human:language_fr"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     },
     {
@@ -102,9 +102,9 @@
       "pipeline_reasons": [
         "human:model_says"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     },
     {
@@ -113,9 +113,9 @@
         "human:model_says",
         "human:language_es"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     },
     {
@@ -124,9 +124,9 @@
         "human:model_says",
         "human:priority_P1"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     },
     {
@@ -136,9 +136,9 @@
         "human:category_PRIVACY_DATA",
         "human:low_confidence_5500"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     },
     {
@@ -147,9 +147,9 @@
         "human:model_says",
         "human:low_confidence_5500"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     },
     {
@@ -157,9 +157,9 @@
       "pipeline_reasons": [
         "human:low_confidence_5500"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     },
     {
@@ -168,9 +168,9 @@
         "human:model_says",
         "human:screen_flagged"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     },
     {
@@ -178,9 +178,9 @@
       "pipeline_reasons": [
         "human:low_confidence_5500"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     },
     {
@@ -189,9 +189,9 @@
         "human:model_says",
         "human:language_fr"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     },
     {
@@ -200,9 +200,9 @@
         "human:model_says",
         "human:screen_flagged"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     },
     {
@@ -211,9 +211,9 @@
         "human:model_says",
         "human:language_de"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     },
     {
@@ -221,9 +221,9 @@
       "pipeline_reasons": [
         "human:low_confidence_1500"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     },
     {
@@ -232,9 +232,9 @@
         "human:model_says",
         "human:low_confidence_5500"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     },
     {
@@ -242,9 +242,9 @@
       "pipeline_reasons": [
         "human:low_confidence_2500"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     },
     {
@@ -252,9 +252,9 @@
       "pipeline_reasons": [
         "human:model_says"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     },
     {
@@ -262,9 +262,9 @@
       "pipeline_reasons": [
         "human:low_confidence_2000"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     },
     {
@@ -273,9 +273,9 @@
         "human:model_says",
         "human:screen_flagged"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     },
     {
@@ -284,10 +284,10 @@
         "human:model_says",
         "human:category_PRIVACY_DATA"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
-      "note": ""
+      "needs_human": true,
+      "agrees_with_pipeline_reason": false,
+      "labels_ok": true,
+      "note": "judged 'human, other reason' with no note given; same text as B1-0272 and B1-0385 (judged 'reason right'), whose reasons also carried low_confidence_5500"
     },
     {
       "ticket_id": "B1-0284",
@@ -295,9 +295,9 @@
         "human:model_says",
         "human:screen_flagged"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     },
     {
@@ -305,9 +305,9 @@
       "pipeline_reasons": [
         "human:low_confidence_5500"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     },
     {
@@ -315,9 +315,9 @@
       "pipeline_reasons": [
         "human:low_confidence_5500"
       ],
-      "needs_human": null,
-      "agrees_with_pipeline_reason": null,
-      "labels_ok": null,
+      "needs_human": true,
+      "agrees_with_pipeline_reason": true,
+      "labels_ok": true,
       "note": ""
     }
   ],
@@ -339,9 +339,9 @@
         "needs_human": true,
         "category": "BILLING"
       },
-      "needs_human": null,
-      "category": null,
-      "note": ""
+      "needs_human": true,
+      "category": "BILLING",
+      "note": "key is right: a person should see it"
     },
     {
       "template_id": "AMB-07",
@@ -361,9 +361,9 @@
         "needs_human": true,
         "category": "FEATURE_REQUEST"
       },
-      "needs_human": null,
-      "category": null,
-      "note": ""
+      "needs_human": true,
+      "category": "FEATURE_REQUEST",
+      "note": "key is right: a person should see it"
     }
   ]
 }
