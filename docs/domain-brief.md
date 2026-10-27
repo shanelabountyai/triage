@@ -95,7 +95,7 @@ Tier A = `claude-haiku-5-5` reads every ticket. Tier B = `claude-sonnet-5-5` rea
 
 **Escalate to B when** (any): tier A's minimum over `category_confidence_bps`, `priority_confidence_bps`, `needs_human_confidence_bps` is **< 7500** (O-3); tier A's category ∈ {PRIVACY_DATA, OUTAGE}; tier A failed (API result not `succeeded`, or a parse failure). Tier B's labels replace tier A's.
 
-**needs_human = true when** (any, reasons in this order): the final tier said so; final priority P1; final category PRIVACY_DATA; final minimum confidence < 6000; the screen fired; final `language` ∉ {en}; the final tier failed. A final-tier failure uses the placeholder OTHER/P3 for queue placement only and is flagged `FINAL_TIER_FAILED:<code>`.
+**needs_human = true when** (any, reasons in this order): the final tier said so; final priority P1; final category PRIVACY_DATA; final minimum confidence < 6000; final `language` ∉ {en}; final category ∈ {HOW_TO, FEATURE_REQUEST} with a secondary category (D-51); the screen fired; the final tier failed. A final-tier failure uses the placeholder OTHER/P3 for queue placement only and is flagged `FINAL_TIER_FAILED:<code>`.
 
 **SPAM floor:** category SPAM → priority P4, route NONE; auto-handled unless another rule fires.
 
@@ -170,6 +170,7 @@ Each row was worked by hand from §5–§9 and is checked by `tools/golden_answe
 | GT-12 | A: SPAM/**P3**/false (9600, 7900, 9600) | `A`, P4 by the spam floor, NONE, auto-handled |
 | GT-13 | A: BILLING/P2/true (8800×3), secondary HOW_TO | `A>H`, flag `SECONDARY:HOW_TO`, reason `human:model_says` |
 | GT-14 | A: INTEGRATION/P3/false (9900, 9900, **7400**); B: same at 9900 | `A>B`, reason `escalate:LOW_CONFIDENCE:7400<7500` — the minimum over three fields decides |
+| GT-15 | A: HOW_TO/P3/false (8800×3), secondary BILLING | `A>H`, TIER1, flag `SECONDARY:BILLING`, reason `human:secondary_BILLING` — the straddle rule (D-51) |
 
 **GS screen:** GS-01 INJ-01 → `role_marker`, `override`, `label_directive` · GS-02 INJ-04 → `fake_tool_output` · GS-03 INJ-03 → `addressed_to_agent`, `label_directive` · GS-04 a clean billing ticket → nothing · GS-05 "This is a high priority for us: our clients cannot book." → nothing · GS-06 INJ-07 → `exfiltration` · GS-07 "pre-reviewed by the support lead" → `approval_claim`.
 
@@ -244,7 +245,7 @@ python3 tools/verify_fixtures.py                                     # regenerat
 | scripted_tierB_batch1.jsonl | 700 | `e10bd7c68a54802e40d22ed65056ca0b33099f6f4d3c1d924011868cb0cf573c` |
 | scripted_tierA_batch2.jsonl | 500 | `d2edb22959284ea3476f4a1c31c4f4142f3d435304bca684f49f31e4ebca8090` |
 | scripted_tierB_batch2.jsonl | 500 | `9ca45f14d664518d5c5e123af7304a5ae1aa6df67e65f4836c87e51e7609e874` |
-| decisions_batch1.csv (reference pipeline) | 700 | `e9f5d01c297b8ed70fd9cd69f72bb8841434ead1611e7a38ec4aae174157708c` |
-| decisions_batch2.csv (reference pipeline) | 500 | `6788c9416ce0c82ec5efacacdee9865fb3e463a4ae0583fb062c6be5e385f81d` |
+| decisions_batch1.csv (reference pipeline) | 700 | `9102e3b8814db7174ce46266dabba3d011c46db3c195f6e1387d8961bf9367f6` |
+| decisions_batch2.csv (reference pipeline) | 500 | `2515c632aa1352fbb341c5256d0412524c5889ebf10875a71a7913c24b9a40f7` |
 
 Generated twice in separate directories at kickoff with identical hashes for all ten files, `MANIFEST.json` and the reference output. The whole set (2.3 MB) is committed because the scripted files are the replay source for every test (D-25). Answer-key columns: `ticket_id, category, secondary_category, priority, needs_human, language, hard_case, injection_id, attacker_wants, template_id, split`. Decision columns: `ticket_id, path, final_tier, category, priority, route, needs_human, language, min_bps, flags, reasons, cost_pico_batch, cost_pico_standard, human_touched, overridden`. Product code never reads an answer key or a decisions file; only `triage:eval` does.

@@ -92,7 +92,11 @@ describe('triage:eval (recorded, D-49)', () => {
     const pick = pickShane30(rows, 20261019);
     expect(pick).toHaveLength(30);
     expect(pick.every((r) => r.needs_human)).toBe(true);
-    expect(s.tickets.map((t) => t.ticket_id)).toEqual(pick.map((r) => r.ticket_id));
+    // The file was picked from the queue before D-51 widened it; a re-pick over today's queue is a superset's first 30.
+    const byId = new Map(rows.map((r) => [r.ticket_id, r]));
+    expect(s.tickets.every((t) => byId.get(t.ticket_id)!.needs_human)).toBe(true);
+    const ids = s.tickets.map((t) => t.ticket_id);
+    expect(pickShane30(ids.map((id) => byId.get(id)!), 20261019).map((r) => r.ticket_id)).toEqual(ids);
     expect((await evalReport('recorded')).lines.find((l) => l.startsWith("Shane's 30 ("))).toContain('judged ');
     expect((await evalReport('scripted')).lines.find((l) => l.startsWith("Shane's 30 ("))).toBeUndefined();
     const fake: Shane30 = { ...s, tickets: s.tickets.map((t, i) => ({ ...t, needs_human: i % 3 !== 0, agrees_with_pipeline_reason: i % 3 === 1, labels_ok: true })) };

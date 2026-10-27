@@ -23,6 +23,7 @@ export const POLICY_SCHEMA = obj({
   escalate_to_tier_b_when: obj({ min_confidence_bps_below: int, category_in: arr(str), tier_a_failed: bool }),
   needs_human_when: obj({
     model_says_needs_human: bool, priority_in: arr(str), category_in: arr(str), final_min_confidence_bps_below: int,
+    secondary_with_category_in: arr(str),
     screen_flagged: bool, language_not_supported: bool, final_tier_failed: bool,
   }),
   route_by_category: map(str),

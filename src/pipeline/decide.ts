@@ -12,6 +12,7 @@ export interface Policy {
   escalate_to_tier_b_when: { min_confidence_bps_below: number; category_in: string[]; tier_a_failed: boolean };
   needs_human_when: {
     model_says_needs_human: boolean; priority_in: string[]; category_in: string[]; final_min_confidence_bps_below: number;
+    secondary_with_category_in: string[];
     screen_flagged: boolean; language_not_supported: boolean; final_tier_failed: boolean;
   };
   route_by_category: Record<string, string>;
@@ -95,7 +96,11 @@ export function decide(ticketId: string, text: string, a: TierResult, b: TierRes
       flags.push(`UNSUPPORTED_LANGUAGE:${language}`);
       human(`language_${language}`);
     }
-    if (p.secondaryCategory !== 'NONE') flags.push(`SECONDARY:${p.secondaryCategory}`);
+    if (p.secondaryCategory !== 'NONE') {
+      flags.push(`SECONDARY:${p.secondaryCategory}`);
+      // D-51: a HOW_TO or FEATURE_REQUEST label that straddles a second category goes to a person (the AMB-05/AMB-07 shape).
+      if (nh.secondary_with_category_in.includes(category)) human(`secondary_${p.secondaryCategory}`);
+    }
   }
   if (nh.screen_flagged && hits.length) {
     needsHuman = true;

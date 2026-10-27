@@ -21,6 +21,7 @@
     "priority_in": ["P1"],
     "category_in": ["PRIVACY_DATA"],
     "final_min_confidence_bps_below": 6000,
+    "secondary_with_category_in": ["HOW_TO", "FEATURE_REQUEST"],
     "screen_flagged": true,
     "language_not_supported": true,
     "final_tier_failed": true

@@ -256,6 +256,11 @@ def decide(ticket_id: str, text: str, a: TierResult, b: TierResult | None) -> De
             reasons.append(f"human:language_{lang}")
         if p.secondary_category != "NONE":
             flags.append(f"SECONDARY:{p.secondary_category}")
+            # D-51: a how-to or feature question that straddles a second category is the AMBIGUOUS shape
+            # both tiers auto-handle (AMB-05, AMB-07); a person reads it.
+            if cat in nh["secondary_with_category_in"]:
+                needs_human = True
+                reasons.append(f"human:secondary_{p.secondary_category}")
     if nh["screen_flagged"] and hits:
         needs_human = True
         reasons.append("human:screen_flagged")

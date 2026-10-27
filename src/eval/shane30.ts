@@ -37,8 +37,9 @@ export function pickShane30(rows: DecisionRow[], seed: number, n = 30): Decision
   return rows.filter((r) => r.needs_human).map((r) => [h(r.ticket_id), r] as const).sort(([a], [b]) => (a < b ? -1 : 1)).slice(0, n).map(([, r]) => r);
 }
 
-/** `human:low_confidence_2500` → `low_confidence`, `human:language_es` → `language`. */
-export const reasonFamily = (reason: string) => reason.replace(/^human:/, '').replace(/_(\d+|[a-z]{2})$/, '');
+/** The rule behind a reason: `human:low_confidence_2500` → `low_confidence`, `human:secondary_BILLING` → `secondary`. */
+export const reasonFamily = (reason: string) =>
+  reason.replace(/^human:/, '').match(/^(model_says|priority|category|low_confidence|language|secondary|screen_flagged|final_tier_failed)/)?.[1] ?? reason;
 
 export function shane30Lines(s: Shane30, rowsById: Map<string, DecisionRow>): string[] {
   const out: string[] = [];

@@ -1,6 +1,6 @@
 {
   "picked_from": "recordings/batch1/decisions.jsonl",
-  "pick": "30 of 288 human-queue tickets, first 30 by sha256('20261019:shane30:<ticket_id>')",
+  "pick": "30 of 288 human-queue tickets as of recordings/batch1/decisions.jsonl at commit 0081758 (before D-51), first 30 by sha256('20261019:shane30:<ticket_id>')",
   "judged_on": "2026-10-27",
   "tickets": [
     {
