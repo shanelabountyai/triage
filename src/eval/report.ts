@@ -36,7 +36,7 @@ const csvLine = (r: DecisionRow, overridden: boolean) => [r.ticket_id, r.path, r
   String(r.needs_human), r.language, String(r.min_bps), r.flags.join('|'), r.reasons.join('|'), r.cost_pico_batch,
   r.cost_pico_standard, String(r.human_touched), String(overridden)].map(csvField).join(',');
 
-const per1k = (pico: bigint, n: number) => (n ? Number(roundHalfUp(pico * 1000n, BigInt(n) * PICO_PER_CENT)) : 0);
+export const per1k = (pico: bigint, n: number) => (n ? Number(roundHalfUp(pico * 1000n, BigInt(n) * PICO_PER_CENT)) : 0);
 const pct = (num: number, den: number) => fmtBps(bps(num, den));
 const sum = (xs: DecisionRow[]) => xs.reduce((s, r) => s + BigInt(r.cost_pico_batch), 0n);
 

@@ -17,6 +17,7 @@ npm test                 # vitest; no network, no key
 npm run triage:eval      # both fixture batches through the pipeline; prints the brief section 11 table (stub: "0 tickets")
 npm run triage:run -- --in <jsonl> --provider <scripted|recorded|live> --out <dir>   # one run (stub); live refuses before Phase 2
 npm run drift:report -- --baseline <run> --window <run>                              # the eight signals (stub)
+npm run ledger:show -- [--ledger <jsonl>] [--run <run_id>]                           # the run ledger as a table; --run adds that run's decisions summary
 npm run fixtures:check   # python3 tools/verify_fixtures.py && golden_answers.py && fixtures/ unchanged in git
 npm run policy:lint      # schema-validates the data files, checks the D-26 hashes, greps src/pipeline/ (stub)
 ```
