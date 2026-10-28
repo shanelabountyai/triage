@@ -13,6 +13,7 @@
     "drift:report": "tsx scripts/drift-report.ts",
     "ledger:show": "tsx scripts/ledger-show.ts",
     "overrides:standin": "tsx scripts/overrides-standin.ts",
+    "overrides:add": "tsx scripts/overrides-add.ts",
     "fixtures:check": "python3 tools/verify_fixtures.py && python3 tools/golden_answers.py && git diff --exit-code fixtures/ && test -z \"$(git status --porcelain fixtures/)\"",
     "policy:lint": "tsx scripts/policy-lint.ts",
     "shane:pick": "tsx scripts/shane-30.ts"

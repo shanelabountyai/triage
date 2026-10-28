@@ -4,9 +4,23 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import type { Policy } from '../pipeline/decide.js';
 import type { Override } from '../pipeline/drift.js';
+import { runDecisions } from './drift.js';
+import { readLedger } from './ledger.js';
 
 export interface OverrideRow { run_id: string; ticket_id: string; category: string; priority: string; by: string; at: string }
 export interface OverrideError { line: number; code: 'OVERRIDE_JSON' | 'OVERRIDE_FIELD'; detail: string }
+
+/** overrides:add (task 3.2): one person's labels for one ticket in one run. Refuses, before writing anything, a run not in
+ * the ledger, a ticket not in that run's decisions.jsonl, or a label outside the policy enums; each a typed error. */
+export function addOverride(o: { ledgerPath: string; overridesPath: string; policy: Policy; row: OverrideRow }): OverrideRow {
+  const { row } = o;
+  if (!o.policy.labels.category.includes(row.category)) throw new Error(`OVERRIDE_BAD_LABEL:category=${row.category} (policy: ${o.policy.labels.category.join(',')})`);
+  if (!o.policy.labels.priority.includes(row.priority)) throw new Error(`OVERRIDE_BAD_LABEL:priority=${row.priority} (policy: ${o.policy.labels.priority.join(',')})`);
+  if (!readLedger(o.ledgerPath).some((r) => r.run_id === row.run_id)) throw new Error(`OVERRIDE_UNKNOWN_RUN:${row.run_id} (not in ${o.ledgerPath})`);
+  if (!runDecisions(o.ledgerPath, row.run_id).some((d) => d.ticket_id === row.ticket_id)) throw new Error(`OVERRIDE_UNKNOWN_TICKET:${row.ticket_id} (not in run ${row.run_id})`);
+  appendOverrides(o.overridesPath, [row]);
+  return row;
+}
 
 export function appendOverrides(path: string, rows: OverrideRow[]): void {
   mkdirSync(dirname(path), { recursive: true });
