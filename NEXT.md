@@ -20,7 +20,6 @@ Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check 
 
 Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 14 files, 88 tests passed · triage:eval scripted 1,200 of 1,200 equal and stdout byte-identical, exit 0 · triage:eval recorded 1,200 of 1,200 equal to `recordings/batch{1,2}/decisions.jsonl`, exit 0. Spend to date: **127¢** of the 1500¢ project cap.
 
-## Older
 
 
 **2026-10-27: task 2.10 done (D-51). Spend to date 127¢ (nothing spent this session).** Shane's 30 recorded in `eval/labels/shane-30.json` (30 of batch 1's 288 human-queue tickets as of commit 0081758, by seeded hash; `npm run shane:pick` made the file once and refuses to overwrite): **30 of 30 human-needed, 0 of 30 would have auto-handled, pipeline reason agreed 29 of 30**, labels ok 30 of 30. Both false-negative templates (AMB-05, AMB-07) judged "a person should see it", so the key stands and the 18 misses were closed by a policy rule, not a prompt change: `needs_human_when.secondary_with_category_in: [HOW_TO, FEATURE_REQUEST]`, reason `human:secondary_<secondary>`, GT-15. O-3 stays 7500.
