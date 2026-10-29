@@ -34,6 +34,9 @@ function assertProjected(tier: Tier, reqs: BatchRequest[], models: Record<Tier, 
   }
 }
 
+/** `<started with - and : stripped>-<provider>`; the handler (task 3.4) needs it before the run finishes. */
+export const runId = (started: string, provider: ProviderName) => `${started.replace(/[-:]/g, '')}-${provider}`;
+
 export async function triageRun(o: RunOptions) {
   const root = o.root ?? '.';
   const json = <T>(p: string): T => JSON.parse(readFileSync(join(root, p), 'utf8')) as T;
@@ -44,7 +47,7 @@ export async function triageRun(o: RunOptions) {
   for (const e of errors) console.error(`intake line ${e.line}: ${e.code} ${e.detail}`);
   const models = { A: c.policy.tiers.A.model, B: c.policy.tiers.B.model };
   const base = () => ({
-    run_id: `${started.replace(/[-:]/g, '')}-${o.provider}`, provider: o.provider,
+    run_id: runId(started, o.provider), provider: o.provider,
     input: o.inPath, input_sha256: sha256File(o.inPath), out: o.outDir, models,
     hashes: Object.fromEntries(Object.keys(recordedHashes(join(root, 'docs/decisions.md'))).map((f) => [f, sha256File(join(root, f))])),
     audit_seed: o.auditSeed,

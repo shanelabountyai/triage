@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "triage:eval": "tsx scripts/eval.ts",
     "triage:run": "tsx scripts/run.ts",
+    "triage:serve": "tsx scripts/serve.ts",
     "drift:report": "tsx scripts/drift-report.ts",
     "ledger:show": "tsx scripts/ledger-show.ts",
     "overrides:standin": "tsx scripts/overrides-standin.ts",

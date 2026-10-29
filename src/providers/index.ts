@@ -1,7 +1,7 @@
 // Where tier results come from (task 1.9). One type, three providers: `scripted` replays fixtures/,
 // `recorded` replays recordings/ (written by the Phase 2 recorder), `live` (src/providers/live.ts) submits Batches.
 // The stub-behind-one-type pattern is from use-case-studio src/lib/kickoff/provider.ts (D-35).
-import { basename, dirname, join } from 'node:path';
+import { basename, join } from 'node:path';
 import type { Ticket } from '../io/tickets.js';
 import { readResults } from '../io/results.js';
 import type { BatchResult } from '../pipeline/parse.js';
@@ -20,7 +20,7 @@ const replay = (file: (tier: Tier, inPath: string) => string): Provider => async
   return new Map([...results].filter(([id]) => ids.has(id)));
 };
 
-/** fixtures/tickets_batch1.jsonl → fixtures/scripted_tier{A,B}_batch1.jsonl */
+/** <any dir>/tickets_batch1.jsonl → <root>/fixtures/scripted_tier{A,B}_batch1.jsonl; the stem names the replay, not the dir (task 3.4) */
 export function stem(inPath: string): string {
   const m = /^tickets_(.+)$/.exec(basename(inPath));
   if (!m) throw new Error(`replay input must be named tickets_<name>.jsonl, got ${basename(inPath)}`);
@@ -29,7 +29,7 @@ export function stem(inPath: string): string {
 
 export function provider(name: ProviderName, root = '.'): Provider {
   switch (name) {
-    case 'scripted': return replay((tier, p) => join(dirname(p), `scripted_tier${tier}_${stem(p)}`));
+    case 'scripted': return replay((tier, p) => join(root, 'fixtures', `scripted_tier${tier}_${stem(p)}`));
     case 'recorded': return replay((tier, p) => join(root, 'recordings', stem(p).replace(/\.jsonl$/, ''), `tier${tier}.jsonl`));
     // only triageRun builds the live provider, behind the D-19 projection (task 2.3); the eval never reaches it
     case 'live': return async () => { throw new Error('LIVE_ONLY_VIA_RUN: the live provider is reached only through triage:run, behind the D-19 caps; nothing was sent'); };
