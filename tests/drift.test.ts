@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { driftReport } from '../src/io/drift.js';
+import { driftReport, lastRuns, runDecisions } from '../src/io/drift.js';
 import { appendOverrides, readOverrides } from '../src/io/overrides.js';
 import { triageRun } from '../src/io/run.js';
 import type { Policy } from '../src/pipeline/decide.js';
@@ -59,14 +59,15 @@ describe('overrides.jsonl', () => {
   });
 });
 
-describe('drift:report, batch 2 vs batch 1 (scripted, answer key as the person, O-6)', () => {
-  it('prints the eight brief §11 values and fires exactly the five', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'triage-drift-'));
-    const ledgerPath = join(dir, 'runs.jsonl'), overridesPath = join(dir, 'overrides.jsonl');
-    const ids: string[] = [];
-    for (const b of [1, 2]) {
-      const t = `2026-10-20T10:0${b}:00.000Z`;
-      const { rows, row } = await triageRun({ inPath: `fixtures/tickets_batch${b}.jsonl`, provider: 'scripted', outDir: join(dir, `b${b}`),
+describe('drift:report, batch 2 vs batch 1 (scripted, answer key as the person, O-6) and pooled windows (3.3, D-55)', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'triage-drift-'));
+  const ledgerPath = join(dir, 'runs.jsonl'), overridesPath = join(dir, 'overrides.jsonl');
+  const ids: string[] = [];
+  // Three scripted runs: batch 1, batch 2, batch 1 again (the third is the pooling twin).
+  const setup = (async () => {
+    for (const [i, b] of [1, 2, 1].entries()) {
+      const t = `2026-10-20T10:0${i + 1}:00.000Z`;
+      const { rows, row } = await triageRun({ inPath: `fixtures/tickets_batch${b}.jsonl`, provider: 'scripted', outDir: join(dir, `r${i}`),
         ledgerPath, auditSeed: 20261019, now: () => t });
       ids.push(row.run_id);
       // The stand-in, as scripts/overrides-standin.ts: the key's labels on every human-touched ticket.
@@ -75,7 +76,12 @@ describe('drift:report, batch 2 vs batch 1 (scripted, answer key as the person, 
       appendOverrides(overridesPath, rows.filter((r) => r.human_touched)
         .map((r) => ({ run_id: row.run_id, ticket_id: r.ticket_id, ...key.get(r.ticket_id)!, by: 'answer-key', at: t })));
     }
-    const r = driftReport({ baseline: ids[0]!, window: ids[1]!, ledgerPath, overridesPath });
+  })();
+  const report = (baseline: string[], window: string[]) => driftReport({ baseline, window, ledgerPath, overridesPath });
+
+  it('prints the eight brief §11 values and fires exactly the five', async () => {
+    await setup;
+    const r = report([ids[0]!], [ids[1]!]);
     expect([r.base.overridden, r.base.reviewed, r.base.humanTouched, r.win.overridden, r.win.reviewed, r.win.humanTouched]).toEqual([41, 287, 287, 46, 272, 272]);
     const ref = readFileSync('fixtures/samples/reference_pipeline.output.txt', 'utf8').split('\n');
     const at = ref.indexOf('  signal                              value     threshold  fired');
@@ -83,5 +89,35 @@ describe('drift:report, batch 2 vs batch 1 (scripted, answer key as the person, 
     expect(r.lines.slice(table, table + 9)).toEqual(ref.slice(at, at + 9));
     expect(r.signals.filter((s) => s.fired).map((s) => s.id)).toEqual(['LABEL_MIX_TVD_CATEGORY', 'LABEL_MIX_TVD_PRIORITY',
       'ESCALATION_SHARE_DELTA', 'HUMAN_QUEUE_SHARE_DELTA', 'UNSUPPORTED_LANGUAGE_SHARE_DELTA']);
+  });
+
+  it('invariance: batch 1 twice equals batch 1 once on every signal, over twice the denominator', async () => {
+    await setup;
+    const once = report([ids[1]!], [ids[0]!]), twice = report([ids[1]!], [ids[0]!, ids[2]!]);
+    expect(twice.signals).toEqual(once.signals);
+    expect([twice.win.n, twice.win.reviewed, twice.win.overridden]).toEqual([once.win.n * 2, once.win.reviewed * 2, once.win.overridden * 2]);
+    expect(twice.lines[0]).toBe(`drift: ${ids[0]},${ids[2]} window (n 1400) vs ${ids[1]} baseline (n 500) (monitoring/drift.v1.json)`);
+    expect(twice.lines.some((l) => l.includes('WARNING'))).toBe(false);
+  });
+
+  it('--last N: newest N runs with decisions vs the N before; a top-up row is not a run; too few is a refusal', async () => {
+    await setup;
+    expect(lastRuns(ledgerPath, 1)).toEqual({ window: [ids[2]], baseline: [ids[1]] });
+    writeFileSync(ledgerPath, readFileSync(ledgerPath, 'utf8') + JSON.stringify({ run_id: 'topup', out: null, hashes: {} }) + '\n');
+    expect(lastRuns(ledgerPath, 1)).toEqual({ window: [ids[2]], baseline: [ids[1]] });
+    expect(() => lastRuns(ledgerPath, 2)).toThrow('DRIFT_LAST_TOO_FEW:2 (3 runs with decisions');
+    expect(() => runDecisions(ledgerPath, 'topup')).toThrow('DRIFT_NO_DECISIONS:topup');
+  });
+
+  it('a mixed-policy-hash window prints a warning naming both hashes', async () => {
+    await setup;
+    const rows = readFileSync(ledgerPath, 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+    const real = rows[0]['hashes']['routing/policy.v1.json'] as string;
+    rows[2]['hashes']['routing/policy.v1.json'] = 'f'.repeat(64);
+    writeFileSync(ledgerPath, rows.map((r) => JSON.stringify(r)).join('\n') + '\n');
+    const r = report([ids[1]!], [ids[0]!, ids[2]!]);
+    expect(r.lines[1]).toBe(`  WARNING: window pools runs under 2 policy hashes: ${real.slice(0, 8)}, ffffffff (a signal may be the policy change, not drift)`);
+    expect(r.signals).toEqual(report([ids[1]!], [ids[0]!]).signals);
+    expect(report([ids[0]!], [ids[2]!]).lines[1]).toBe(`  WARNING: window policy hash ffffffff differs from baseline ${real.slice(0, 8)} (a signal may be the policy change, not drift)`);
   });
 });

@@ -58,6 +58,19 @@ export function windowStats(rows: DecisionRow[], overrides: Map<string, Override
     escalated, humanQueue, lowConfA, unsupportedLang, resultsTotal, resultsFailed, humanTouched, reviewed, overridden };
 }
 
+/** Two windows pooled: every field is a sum over rows, so summing the counts equals concatenating the rows (task 3.3). */
+export function sumStats(a: WindowStats, b: WindowStats): WindowStats {
+  const add = (x: Record<string, number>, y: Record<string, number>): Record<string, number> => {
+    const out = { ...x };
+    for (const [k, v] of Object.entries(y)) out[k] = (out[k] ?? 0) + v;
+    return out;
+  };
+  return { n: a.n + b.n, categoryCounts: add(a.categoryCounts, b.categoryCounts), priorityCounts: add(a.priorityCounts, b.priorityCounts),
+    escalated: a.escalated + b.escalated, humanQueue: a.humanQueue + b.humanQueue, lowConfA: a.lowConfA + b.lowConfA,
+    unsupportedLang: a.unsupportedLang + b.unsupportedLang, resultsTotal: a.resultsTotal + b.resultsTotal, resultsFailed: a.resultsFailed + b.resultsFailed,
+    humanTouched: a.humanTouched + b.humanTouched, reviewed: a.reviewed + b.reviewed, overridden: a.overridden + b.overridden };
+}
+
 const shares = (w: WindowStats): Record<string, number> => ({
   OVERRIDE_RATE_DELTA: bps(w.overridden, w.reviewed),
   ESCALATION_SHARE_DELTA: bps(w.escalated, w.n),
