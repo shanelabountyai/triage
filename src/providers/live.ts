@@ -18,7 +18,7 @@ export interface BatchClient {
 }
 
 /** D-47: both policy model ids must be listed before anything is sent; names every missing id. */
-export async function assertModelsListed(client: BatchClient, models: Record<Tier, string>): Promise<void> {
+export async function assertModelsListed(client: Pick<BatchClient, 'models'>, models: Record<Tier, string>): Promise<void> {
   const want = new Set(Object.values(models));
   for await (const m of client.models.list()) want.delete(m.id);
   if (want.size) throw new Error(`MODEL_NOT_LISTED: ${[...want].join(', ')}; nothing was sent`);
@@ -103,9 +103,14 @@ export function liveProvider(c: LiveConfig): Provider {
   };
 }
 
-/** Refuses unless TRIAGE_LIVE=1 and a key are both set (D-19); nothing is constructed or sent otherwise. */
-export function liveFromEnv(env: Record<string, string | undefined>, c: Omit<LiveConfig, 'client'>): Provider {
+/** D-19: TRIAGE_LIVE=1 and a key, or nothing is constructed or sent. Shared by the Batches and the `messages` (task 3.5) paths. */
+export function assertLiveEnv(env: Record<string, string | undefined>): string {
   if (env['TRIAGE_LIVE'] !== '1') throw new Error('LIVE_REFUSED: TRIAGE_LIVE=1 is not set; nothing was sent');
   if (!env['ANTHROPIC_API_KEY']) throw new Error('LIVE_REFUSED: ANTHROPIC_API_KEY is not set; nothing was sent');
-  return liveProvider({ ...c, client: new Anthropic({ apiKey: env['ANTHROPIC_API_KEY'] }) });
+  return env['ANTHROPIC_API_KEY'];
+}
+
+/** Refuses unless TRIAGE_LIVE=1 and a key are both set (D-19); nothing is constructed or sent otherwise. */
+export function liveFromEnv(env: Record<string, string | undefined>, c: Omit<LiveConfig, 'client'>): Provider {
+  return liveProvider({ ...c, client: new Anthropic({ apiKey: assertLiveEnv(env) }) });
 }

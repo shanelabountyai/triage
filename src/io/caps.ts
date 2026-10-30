@@ -16,7 +16,14 @@ export function capsFromEnv(env: Record<string, string | undefined>): Caps {
   return { runCents: cents('TRIAGE_RUN_CAP_CENTS', 400), projectCents: cents('TRIAGE_PROJECT_CAP_CENTS', 1500) };
 }
 
-interface LedgerRow { run_id: string; provider: string; cost_pico_batch: string; cap_status: string; acknowledges?: string[] }
+interface LedgerRow { run_id: string; provider: string; cost_pico_batch: string; cost_pico_standard?: string; cap_status: string; acknowledges?: string[] }
+
+/** The providers whose rows are money: `live` (Batches, batch prices) and `messages` (task 3.5, standard prices). */
+export const spends = (r: { provider: string }): boolean => r.provider === 'live' || r.provider === 'messages';
+
+/** What a row was billed: batch pico for a Batches run, standard pico for a `messages` call; a replay's notional cost is 0 here. */
+export const billedPico = (r: Pick<LedgerRow, 'provider' | 'cost_pico_batch' | 'cost_pico_standard'>): bigint =>
+  r.provider === 'live' ? BigInt(r.cost_pico_batch) : r.provider === 'messages' ? BigInt(r.cost_pico_standard ?? '0') : 0n;
 
 /** Live spend over the whole ledger (replays spend nothing, whatever their notional cost) and the unacknowledged OVER_CAP runs. */
 export function ledgerState(path: string): { livePico: bigint; overCap: string[] } {
@@ -24,7 +31,7 @@ export function ledgerState(path: string): { livePico: bigint; overCap: string[]
     ? readFileSync(path, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l) as LedgerRow) : [];
   const acked = new Set(rows.flatMap((r) => r.acknowledges ?? []));
   return {
-    livePico: rows.filter((r) => r.provider === 'live').reduce((s, r) => s + BigInt(r.cost_pico_batch), 0n),
+    livePico: rows.reduce((s, r) => s + billedPico(r), 0n),
     overCap: rows.filter((r) => r.cap_status === 'OVER_CAP' && !acked.has(r.run_id)).map((r) => r.run_id),
   };
 }

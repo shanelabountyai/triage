@@ -6,11 +6,11 @@ import { join } from 'node:path';
 import { per1k } from '../eval/report.js';
 import { bps, fmtBps, picoToCents } from '../pipeline/num.js';
 import type { DecisionRow } from '../pipeline/run.js';
-import { ledgerState } from './caps.js';
+import { billedPico, ledgerState, spends } from './caps.js';
 
 export interface LedgerRow {
   run_id: string; provider: string; input: string; input_sha256: string; out: string | null; topup_of?: string;
-  models: { A: string; B: string }; hashes: Record<string, string>; tickets: number; cost_pico_batch: string; cost_cents: number;
+  models: { A: string; B: string }; hashes: Record<string, string>; tickets: number; cost_pico_batch: string; cost_pico_standard?: string; cost_cents: number;
   cap_status: string; error?: string; latency_s_p50: number | null; latency_s_p95: number | null;
 }
 
@@ -24,10 +24,12 @@ export function ledgerTable(path: string): string[] {
   const rows = readLedger(path);
   const w = { id: Math.max(6, ...rows.map((r) => r.run_id.length)), models: Math.max(14, ...rows.map((r) => `${r.models.A} / ${r.models.B}`.length)) };
   const lat = (r: LedgerRow) => (r.latency_s_p50 === null ? 'n/a' : `${r.latency_s_p50}/${r.latency_s_p95}`);
-  const live = rows.filter((r) => r.provider === 'live');
+  const live = rows.filter(spends);
+  // cents: what the row was billed (batch prices for `live`, standard for `messages`); a replay shows its notional batch cost
+  const cents = (r: LedgerRow) => picoToCents(spends(r) ? billedPico(r) : BigInt(r.cost_pico_batch));
   return [
     `${'run id'.padEnd(w.id)}  ${'provider'.padEnd(8)}  ${'models (A / B)'.padEnd(w.models)}  tickets  cents  ${'cap'.padEnd(10)}  ${'p50/p95 s'.padEnd(9)}  ${HASH_FILES.map((f) => f.split('/')[1]!.split('.')[0]!.padEnd(8)).join(' ')}`,
-    ...rows.map((r) => `${r.run_id.padEnd(w.id)}  ${r.provider.padEnd(8)}  ${`${r.models.A} / ${r.models.B}`.padEnd(w.models)}  ${String(r.tickets).padStart(7)}  ${String(picoToCents(BigInt(r.cost_pico_batch))).padStart(5)}  ${r.cap_status.padEnd(10)}  ${lat(r).padEnd(9)}  ${HASH_FILES.map((f) => (r.hashes[f] ?? '').slice(0, 8).padEnd(8)).join(' ')}`),
+    ...rows.map((r) => `${r.run_id.padEnd(w.id)}  ${r.provider.padEnd(8)}  ${`${r.models.A} / ${r.models.B}`.padEnd(w.models)}  ${String(r.tickets).padStart(7)}  ${String(cents(r)).padStart(5)}  ${r.cap_status.padEnd(10)}  ${lat(r).padEnd(9)}  ${HASH_FILES.map((f) => (r.hashes[f] ?? '').slice(0, 8).padEnd(8)).join(' ')}`),
     `${rows.length} runs · live spend ${picoToCents(ledgerState(path).livePico)}¢ over ${live.length} live rows (pico sum, what the project cap reads) · ${rows.length - live.length} replay rows spend nothing`,
   ];
 }

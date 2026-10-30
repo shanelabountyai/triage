@@ -13,6 +13,7 @@ export const PROVIDERS = ['scripted', 'recorded', 'live'] as const;
 export type ProviderName = (typeof PROVIDERS)[number];
 
 const replay = (file: (tier: Tier, inPath: string) => string): Provider => async (tier, tickets, inPath) => {
+  if (!tickets.length) return new Map(); // nothing to look up; a sync recording (task 3.5) has no tier B file until a call escalates
   const path = file(tier, inPath);
   const { results, errors } = readResults(path);
   if (errors.length) throw new Error(`${path}: ${errors.length} bad result line(s), first: line ${errors[0]!.line} ${errors[0]!.code} ${errors[0]!.detail}`);

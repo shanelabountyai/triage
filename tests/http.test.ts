@@ -8,10 +8,21 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { capsFromEnv } from '../src/io/caps.js';
 import { BODY_LIMIT, CONTRACT, createTriageServer } from '../src/io/http.js';
 import { liveFromEnv } from '../src/providers/live.js';
+import { messagesFromEnv } from '../src/providers/sync.js';
 import type { DecisionRow } from '../src/pipeline/run.js';
 
 const TOKEN = 'test-token-7c1b9e';
 const tickets = readFileSync('fixtures/tickets_batch1.jsonl', 'utf8').trim().split('\n').map((l) => JSON.parse(l) as object);
+const expected = readFileSync('fixtures/decisions_batch1.csv', 'utf8').trim().split('\n').slice(1);
+// the same column mapping as tests/run.test.ts: the answer key stands in for the person on `overridden` (O-6)
+const key = new Map(readFileSync('fixtures/answer_key_batch1.csv', 'utf8').trim().split('\n').slice(1)
+  .map((l) => l.split(',')).map((f) => [f[0]!, `${f[1]},${f[3]}`]));
+const csvRow = (r: DecisionRow) => {
+  const reasons = r.reasons.join('|');
+  const overridden = r.human_touched && key.get(r.ticket_id) !== `${r.category},${r.priority}`;
+  return [r.ticket_id, r.path, r.final_tier, r.category, r.priority, r.route, r.needs_human, r.language, r.min_bps,
+    r.flags.join('|'), reasons.includes(',') ? `"${reasons}"` : reasons, r.cost_pico_batch, r.cost_pico_standard, r.human_touched, overridden].join(',');
+};
 const logs: string[] = [];
 let server: Server, base: string, dir: string;
 let frozen: string | undefined; // a test pins the clock to force a run_id collision
@@ -19,7 +30,7 @@ let frozen: string | undefined; // a test pins the clock to force a run_id colli
 beforeAll(async () => {
   dir = mkdtempSync(join(tmpdir(), 'triage-http-'));
   server = createTriageServer({ token: TOKEN, ledgerPath: join(dir, 'runs.jsonl'), dataDir: join(dir, 'http'), log: (l) => logs.push(l),
-    now: () => frozen ?? new Date().toISOString(), live: (c) => liveFromEnv({}, c), caps: capsFromEnv({}) }); // an empty env: the live gate as serve.ts wires it, with nothing set
+    now: () => frozen ?? new Date().toISOString(), live: (c) => liveFromEnv({}, c), sync: (c) => messagesFromEnv({}, c), caps: capsFromEnv({}) }); // an empty env: the live gate as serve.ts wires it, with nothing set
   await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
   const a = server.address();
   base = `http://127.0.0.1:${typeof a === 'object' && a ? a.port : 0}`;
@@ -101,18 +112,9 @@ describe('triage:serve, triage.http.v1 (scripted)', () => {
     expect(done['error']).toBeNull();
     const row = done['ledger_row'] as Record<string, unknown>;
     expect(row).toMatchObject({ run_id: runId, provider: 'scripted', tickets: 700, intake_errors: 0, cap_status: 'n/a', input: join(dir, 'http', runId, 'tickets_batch1.jsonl') });
-    const rows = done['decisions'] as DecisionRow[];
-    // the same column mapping as tests/run.test.ts: the answer key stands in for the person on `overridden` (O-6)
-    const key = new Map(readFileSync('fixtures/answer_key_batch1.csv', 'utf8').trim().split('\n').slice(1)
-      .map((l) => l.split(',')).map((f) => [f[0]!, `${f[1]},${f[3]}`]));
-    const ours = rows.map((r) => {
-      const reasons = r.reasons.join('|');
-      const overridden = r.human_touched && key.get(r.ticket_id) !== `${r.category},${r.priority}`;
-      return [r.ticket_id, r.path, r.final_tier, r.category, r.priority, r.route, r.needs_human, r.language, r.min_bps,
-        r.flags.join('|'), reasons.includes(',') ? `"${reasons}"` : reasons, r.cost_pico_batch, r.cost_pico_standard, r.human_touched, overridden].join(',');
-    });
+    const ours = (done['decisions'] as DecisionRow[]).map(csvRow);
     expect(ours).toHaveLength(700);
-    expect(ours).toEqual(readFileSync('fixtures/decisions_batch1.csv', 'utf8').trim().split('\n').slice(1));
+    expect(ours).toEqual(expected);
 
     const ledger = await json(await call('GET', '/runs'));
     expect(ledger.status).toBe(200);
@@ -130,6 +132,43 @@ describe('triage:serve, triage.http.v1 (scripted)', () => {
     expect(done['status']).toBe('failed');
     expect(done['error']).toMatch(/LIVE_REFUSED: TRIAGE_LIVE=1 is not set/);
     expect(done['decisions']).toBeNull();
+    expect(readFileSync(join(dir, 'runs.jsonl'), 'utf8')).toBe(before);
+  });
+  it('POST /triage (task 3.5): one scripted ticket → 200 with the decision equal to its fixtures/decisions_batch1.csv row, and a ledger row of 1', async () => {
+    for (const i of [0, 3, 15]) { // B1-0001 (A), B1-0004 (A>B>H), B1-0016 (A)
+      const r = await json(await call('POST', '/triage', { provider: 'scripted', batch: 'batch1', ticket: tickets[i] }));
+      expect(r.status).toBe(200);
+      expect(r.body['status']).toBe('done');
+      expect(csvRow(r.body['decision'] as DecisionRow)).toBe(expected[i]);
+      expect(r.body['ledger_row']).toMatchObject({ run_id: r.body['run_id'], provider: 'scripted', tickets: 1, cap_status: 'n/a' });
+      expect((await json(await call('GET', `/runs/${r.body['run_id']}`))).body['decisions']).toEqual([r.body['decision']]);
+    }
+    expect((await call('GET', '/triage')).status).toBe(405);
+    for (const bad of [{ provider: 'live', batch: 'b', ticket: tickets[0] }, { provider: 'scripted', ticket: tickets[0] }, { provider: 'messages', batch: 'b', ticket: tickets[0] },
+      { provider: 'scripted', batch: 'b', ticket: [tickets[0]] }, { provider: 'scripted', batch: 'b', ticket: 'text' }]) {
+      const r = await json(await call('POST', '/triage', bad));
+      expect([r.status, r.body['error']]).toEqual([400, 'BAD_REQUEST']);
+    }
+    expect(await json(await call('POST', '/triage', { provider: 'scripted', batch: 'b', ticket: { ticket_id: 'x y', subject: 's', body: 'b' } })))
+      .toEqual({ status: 400, body: { error: 'INTAKE', errors: [{ line: 1, code: 'INTAKE_ID', detail: 'ticket_id "x y" fails ^[a-zA-Z0-9_-]{1,64}$' }] } });
+  });
+  it('POST /triage recorded, batch sync: the committed recordings/sync/ (the D-57 smoke) replays to its own decisions.jsonl', async () => {
+    const byId = new Map(tickets.map((t) => [(t as { ticket_id: string }).ticket_id, t]));
+    const recorded = readFileSync('recordings/sync/decisions.jsonl', 'utf8').trim().split('\n').map((l) => JSON.parse(l) as DecisionRow);
+    expect(recorded.length).toBeGreaterThanOrEqual(5);
+    for (const d of recorded) {
+      const r = await json(await call('POST', '/triage', { provider: 'recorded', batch: 'sync', ticket: byId.get(d.ticket_id) }));
+      expect(r.status).toBe(200);
+      expect(r.body['decision']).toEqual(d);
+      expect(r.body['ledger_row']).toMatchObject({ provider: 'recorded', tickets: 1, cap_status: 'n/a', latency_s_p50: null });
+    }
+  });
+  it('POST /triage with messages and nothing set → 503 LIVE_REFUSED, nothing sent, no ledger row', async () => {
+    const before = readFileSync(join(dir, 'runs.jsonl'), 'utf8');
+    const r = await json(await call('POST', '/triage', { provider: 'messages', ticket: tickets[0] }));
+    expect(r.status).toBe(503);
+    expect(r.body).toMatchObject({ status: 'failed', error: expect.stringMatching(/^LIVE_REFUSED: TRIAGE_LIVE=1/), ledger_row: null });
+    expect((r.body['run_id'] as string).endsWith('-messages')).toBe(true);
     expect(readFileSync(join(dir, 'runs.jsonl'), 'utf8')).toBe(before);
   });
   it('never logs the token: not on a 401, not on a 202, not anywhere', () => {

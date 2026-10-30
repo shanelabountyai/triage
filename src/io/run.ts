@@ -23,19 +23,20 @@ export interface RunOptions {
   caps?: Caps; acknowledgeOverCap?: boolean;
 }
 
-/** D-19: the ceiling projection (cache miss, MAX_TOKENS output each) must fit what both caps leave, or nothing is sent. */
-function assertProjected(tier: Tier, reqs: BatchRequest[], models: Record<Tier, string>, prices: Prices, caps: Caps, ledgerPico: bigint, spent: bigint): void {
+/** D-19: the ceiling projection (cache miss, MAX_TOKENS output each) must fit what both caps leave, or nothing is sent.
+ *  `batch` false prices the ceiling at standard rates (the `messages` path, task 3.5). */
+export function assertProjected(tier: Tier, reqs: BatchRequest[], models: Record<Tier, string>, prices: Prices, caps: Caps, ledgerPico: bigint, spent: bigint, batch = true): void {
   const r0 = reqs[0]!.params; // the prefix is identical across the batch (non-negotiable 8; the provider asserts it)
-  const proj = projectPico(models[tier], r0.system[0]!.text + JSON.stringify(r0.output_config), reqs.map((r) => r.params.messages[0]!.content), MAX_TOKENS, prices);
+  const proj = projectPico(models[tier], r0.system[0]!.text + JSON.stringify(r0.output_config), reqs.map((r) => r.params.messages[0]!.content), MAX_TOKENS, prices, batch);
   const room = headroomPico(caps, ledgerPico, spent);
   if (proj > room) {
-    throw new Error(`CAP_PROJECTION: tier ${tier}, ${reqs.length} requests project ${picoToCents(proj)}¢ (ceiling: cache miss, ${MAX_TOKENS} output tokens each) `
+    throw new Error(`CAP_PROJECTION: tier ${tier}, ${reqs.length} requests project ${picoToCents(proj)}¢ (ceiling: cache miss, ${MAX_TOKENS} output tokens each, ${batch ? 'batch' : 'standard'} prices) `
       + `over ${picoToCents(room > 0n ? room : 0n)}¢ left (run cap ${caps.runCents}¢, project cap ${caps.projectCents}¢, ledger live spend ${picoToCents(ledgerPico)}¢); tier ${tier} was not sent`);
   }
 }
 
 /** `<started with - and : stripped>-<provider>`; the handler (task 3.4) needs it before the run finishes. */
-export const runId = (started: string, provider: ProviderName) => `${started.replace(/[-:]/g, '')}-${provider}`;
+export const runId = (started: string, provider: string) => `${started.replace(/[-:]/g, '')}-${provider}`;
 
 export async function triageRun(o: RunOptions) {
   const root = o.root ?? '.';

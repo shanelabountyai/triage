@@ -25,6 +25,7 @@ Every path except `GET /health` needs `Authorization: Bearer <TRIAGE_HTTP_TOKEN>
 | `POST /runs` | `{"provider":"scripted"\|"recorded"\|"live", "batch":"<name>", "tickets":[{...}, ...]}` | `202 {"run_id":"<id>","status":"running"}`. The run is queued; poll `GET /runs/<id>`. |
 | `GET /runs/<id>` | | `200 {"run_id","status":"running"\|"done"\|"failed","error":null\|"<message>","ledger_row":null\|{...},"decisions":null\|[...]}` |
 | `GET /runs` | | `200 [ledger rows]`, the whole `data/runs.jsonl` in order (the `ledger:show` rows as JSON). |
+| `POST /triage` | `{"provider":"scripted"\|"recorded"\|"messages", "batch":"<name>" (replays only), "ticket":{...}}` | `200 {"run_id","status":"done","decision":{...},"ledger_row":{...}}`, synchronous: the decision is in the response (task 3.5, O-10, D-57). |
 
 **`tickets`** is a JSON array; each element is a ticket object with `ticket_id` (matching `^[a-zA-Z0-9_-]{1,64}$`, the Batch `custom_id` rule, D-9), `subject` and `body` as strings, any other fields kept. The array is written as `tickets_<batch>.jsonl`, one line per element, so intake line numbers are the array's 1-based positions.
 
@@ -36,12 +37,21 @@ Every path except `GET /health` needs `Authorization: Bearer <TRIAGE_HTTP_TOKEN>
 
 **`ledger_row`** is the run's `data/runs.jsonl` row (D-19 shape: tokens, `cost_pico_batch`, `cost_cents`, `cap_status`, hashes, latency). `null` while running; present after a `live` failure that spent money (`cap_status` INCOMPLETE or OVER_CAP, `error` set).
 
+### `POST /triage`: one time-sensitive ticket (task 3.5, O-10)
+
+One ticket in, one decision out, in the response: the path for a ticket N9 cannot leave in a batch for up to 24 hours. The same pure run as `POST /runs` over a one-ticket list, the same decision row (O-9) and a ledger row of `tickets: 1` with the same shape plus `cost_pico_standard` and `latency_ms_per_call` (one entry per tier called, request → response in ms).
+
+- **`provider: "messages"`** sends the ticket through `client.messages.create`, one request per tier, each request the Batches request's params verbatim (same cached prefix, `output_config.effort: low`), **at standard prices**: the ledger row's `cost_pico_standard` is what was billed and `cost_pico_batch` the notional batch cost beside it; `cost_cents` and the project cap read the standard figure. The D-19 gate applies per call: the OVER_CAP latch refuses (it is released from `triage:run --acknowledge-over-cap` only), a projection at standard prices runs before each tier (about 1.6¢ ceiling per call), the real cost from the usage fields sets `cap_status`. Needs `TRIAGE_LIVE=1`, the key and headroom, as `live` does. Every answer is appended to `recordings/sync/tier{A,B}.jsonl` (a ticket recorded once, its first answer), the decision to `recordings/sync/decisions.jsonl`, and a manifest line to `recordings/sync/calls.jsonl`. `batch` must be absent: the recording stem is fixed to `sync`.
+- **`provider: "scripted"` or `"recorded"`** replays by `batch` exactly as `POST /runs` does; `batch: "sync"` with `recorded` replays what the `messages` calls recorded, which is what the test holds.
+- `messages` calls run one at a time among themselves (so two cannot read the same cap headroom) but do **not** wait behind a queued `/runs` batch run.
+- A failure is `503 {"run_id","status":"failed","error","ledger_row"}`: `LIVE_REFUSED`, `CAP_LATCHED`, `CAP_PROJECTION`, a provider error. `ledger_row` is present only when money went out (tier A paid for, tier B refused: `cap_status: "INCOMPLETE"`). The ticket is not lost; N9 falls back to the batch path. `GET /runs/<id>` works for a `/triage` run id as for any other.
+
 ## Errors
 
 | Status | Body | When |
 |---|---|---|
 | `400` | `{"error":"BAD_JSON"}` | body is not JSON |
-| `400` | `{"error":"BAD_REQUEST","detail"}` | not an object; `provider` not one of the three; `batch` missing or failing the character rule; `tickets` not an array; `tickets` empty |
+| `400` | `{"error":"BAD_REQUEST","detail"}` | not an object; `provider` not one of the three; `batch` missing or failing the character rule; `tickets` not an array; `tickets` empty. On `/triage`: `provider` not `scripted`/`recorded`/`messages`, `batch` present with `messages` or missing for a replay, `ticket` not an object |
 | `400` | `{"error":"INTAKE","errors":[{"line","code","detail"}, ...]}` | any element fails intake: `INTAKE_JSON` (not an object), `INTAKE_FIELD` (missing or non-string `ticket_id`/`subject`/`body`), `INTAKE_ID`, `INTAKE_DUPLICATE_ID`. Nothing is written or run. |
 | `401` | `{"error":"UNAUTHORIZED"}` | see Authentication |
 | `404` | `{"error":"RUN_UNKNOWN","run_id"}` / `{"error":"NOT_FOUND"}` | id in neither memory nor the ledger / unknown path |
@@ -49,6 +59,7 @@ Every path except `GET /health` needs `Authorization: Bearer <TRIAGE_HTTP_TOKEN>
 | `409` | `{"error":"RUN_EXISTS","run_id"}` | same-millisecond collision |
 | `413` | `{"error":"BODY_TOO_LARGE","limit_bytes":2097152}` | declared or streamed body over 2 MB; the body is drained, then refused |
 | `500` | `{"error":"INTERNAL","detail"}` | an unexpected throw in the handler itself (a run's failure is not this: it is `status: "failed"` on the run) |
+| `503` | `{"run_id","status":"failed","error","ledger_row"}` | `POST /triage` could not produce a decision (refused, capped, or the provider failed); fall back to `POST /runs` |
 
 A run that fails after `202` reports `status: "failed"` with the thrown message as `error`: `LIVE_REFUSED` (no `TRIAGE_LIVE=1` or key), `CAP_PROJECTION`, `CAP_LATCHED`, `RECORDING_EXISTS`, `EEXIST` (out dir reused), or a provider error. A replay run spends nothing and its row says `cap_status: "n/a"`.
 
@@ -62,8 +73,10 @@ curl -s localhost:6300/runs/20261029T153000.123Z-scripted -H "authorization: Bea
 → 200 {"run_id":"...","status":"done","error":null,"ledger_row":{...},"decisions":[{...}]}
 ```
 
-Held by `tests/http.test.ts`: a POST of batch 1's 700 tickets with the scripted provider yields decisions equal to `fixtures/decisions_batch1.csv` on every column; `401`, `413` (declared and chunked), `400` (bad JSON, five bad envelopes, four intake codes with line numbers), `404`, `405`, `409`; a `live` POST with nothing set fails as `LIVE_REFUSED` and writes no ledger row; the token appears in no log line. No test spends a token (D-2).
+Held by `tests/http.test.ts`: a POST of batch 1's 700 tickets with the scripted provider yields decisions equal to `fixtures/decisions_batch1.csv` on every column; `401`, `413` (declared and chunked), `400` (bad JSON, five bad envelopes, four intake codes with line numbers), `404`, `405`, `409`; a `live` POST with nothing set fails as `LIVE_REFUSED` and writes no ledger row; the token appears in no log line. `POST /triage`: three scripted tickets equal their `decisions_batch1.csv` rows, the committed `recordings/sync/` replays to its own `decisions.jsonl`, five bad envelopes and an intake code are `400`, `messages` with nothing set is `503 LIVE_REFUSED` with no ledger row. No test spends a token (D-2).
+
+Adding a path keeps the version (`POST /triage` was added under v1, D-57); changing an existing path, field or status code is a new version.
 
 ## Not in v1
 
-TLS (loopback or N9's reverse proxy terminates it), rate limiting, a per-run cancel, acknowledging the cap latch, and `POST /triage` for one time-sensitive ticket, which is task 3.5 (O-10) and will be its own contract entry.
+TLS (loopback or N9's reverse proxy terminates it), rate limiting, a per-run cancel, acknowledging the cap latch.

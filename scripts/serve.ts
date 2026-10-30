@@ -7,6 +7,7 @@ import { parseArgs } from 'node:util';
 import { capsFromEnv } from '../src/io/caps.js';
 import { CONTRACT, createTriageServer } from '../src/io/http.js';
 import { liveFromEnv } from '../src/providers/live.js';
+import { messagesFromEnv } from '../src/providers/sync.js';
 
 const DEFAULT_PORT = 6300;
 const { values: v } = parseArgs({ options: {
@@ -17,8 +18,8 @@ const port = Number(v.port ?? process.env['PORT'] ?? DEFAULT_PORT);
 try {
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error(`PORT_INVALID: ${JSON.stringify(v.port ?? process.env['PORT'])}`);
   const server = createTriageServer({ token: process.env['TRIAGE_HTTP_TOKEN'] ?? '', ledgerPath: v.ledger, dataDir: v.data,
-    live: (c) => liveFromEnv(process.env, c), caps: capsFromEnv(process.env) });
-  server.listen(port, () => console.log(`triage:serve ${CONTRACT} on http://localhost:${port} · ledger ${v.ledger} · runs under ${v.data} · live needs TRIAGE_LIVE=1, a key and cap headroom (D-19)`));
+    live: (c) => liveFromEnv(process.env, c), sync: (c) => messagesFromEnv(process.env, c), caps: capsFromEnv(process.env) });
+  server.listen(port, () => console.log(`triage:serve ${CONTRACT} on http://localhost:${port} · ledger ${v.ledger} · runs under ${v.data} · live and messages need TRIAGE_LIVE=1, a key and cap headroom (D-19)`));
 } catch (e) {
   console.error(`triage:serve refused: ${(e as Error).message}`);
   process.exit(1);

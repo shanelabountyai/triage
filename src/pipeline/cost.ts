@@ -40,9 +40,10 @@ export function estTokens(text: string): number {
 }
 
 /** CEILING, not a measurement (D-19, D-40 item 3): per request, the prefix is written to the 1h cache (the cache is
- *  assumed to miss), the user turn is input by estTokens, and the whole max_tokens allowance is output. Batch prices. */
-export function projectPico(model: string, prefix: string, userTurns: string[], maxTokens: number, prices: Prices): bigint {
+ *  assumed to miss), the user turn is input by estTokens, and the whole max_tokens allowance is output. Batch prices
+ *  unless `batch` is false (the synchronous `messages` path, task 3.5, pays standard prices). */
+export function projectPico(model: string, prefix: string, userTurns: string[], maxTokens: number, prices: Prices, batch = true): bigint {
   const write = estTokens(prefix);
   return userTurns.reduce((s, u) => s + costPico(model,
-    { input: estTokens(u), cacheRead: 0, cacheCreation5m: 0, cacheCreation1h: write, output: maxTokens }, true, prices), 0n);
+    { input: estTokens(u), cacheRead: 0, cacheCreation5m: 0, cacheCreation1h: write, output: maxTokens }, batch, prices), 0n);
 }

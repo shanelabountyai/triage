@@ -82,7 +82,10 @@ describe('D-19 caps (fake client)', () => {
     const row = (provider: string, cents: bigint) => JSON.stringify({ run_id: `r-${provider}`, provider, cost_pico_batch: String(cents * PICO_PER_CENT), cap_status: provider === 'live' ? 'OK' : 'n/a' }) + '\n';
     appendFileSync(join(s.dir, 'runs.jsonl'), row('scripted', 100_000n)); // a replay "costs" 1000 USD and spends nothing
     expect((await s.run(fake(80), { runCents: 200, projectCents: 1500 })).row.cap_status).toBe('OK');
-    appendFileSync(join(s.dir, 'runs.jsonl'), row('live', 1500n)); // live spend now at the project cap
+    // a messages row (task 3.5) is billed at standard prices: its cost_pico_standard counts, its batch notional does not
+    appendFileSync(join(s.dir, 'runs.jsonl'), JSON.stringify({ run_id: 'r-messages', provider: 'messages', cost_pico_batch: String(500n * PICO_PER_CENT), cost_pico_standard: String(1000n * PICO_PER_CENT), cap_status: 'OK' }) + '\n');
+    expect(ledgerState(join(s.dir, 'runs.jsonl')).livePico).toBe(1000n * PICO_PER_CENT + 5n * 22_000_000n);
+    appendFileSync(join(s.dir, 'runs.jsonl'), row('live', 500n)); // live spend now at the project cap
     expect(ledgerState(join(s.dir, 'runs.jsonl')).livePico).toBe(1500n * PICO_PER_CENT + 5n * 22_000_000n);
     const f = fake(80);
     await expect(s.run(f, { runCents: 200, projectCents: 1500 })).rejects.toThrow(/CAP_PROJECTION: tier A.*project cap 1500¢/);
