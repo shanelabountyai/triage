@@ -1,5 +1,11 @@
 # NEXT
 
+## ▶ Next session: closure item 2, the exec brief (`exec-brief` skill) — Sonnet fits
+
+**2026-11-02: closure item 1 done, `docs/DEMO.md`.** Seven screens, about 15 minutes, no token spent. Every command was run once on `ff23c73`: gate 125 tests, eval recorded 1,200 of 1,200, scripted and recorded `triage:run` into a scratch ledger, live refusal (`LIVE_REFUSED`, `--env-file /dev/null`, D-59), override stand-in 287/321 rows, drift 6 of 8 fired, HTTP health/401/`POST /triage`/`POST /runs`, `HTTP_NO_TOKEN`. Spend to date 171¢ of 1500¢ (nothing this session).
+
+**Still to do for closure:** (2) exec brief `Triage in Brief`, matching the sibling briefs; (3) LinkedIn drafts into the Ledger (D-49/D-50/D-51, D-63 recovery, D-64 fragile margin); (4) cost review. **Found for the cost review:** `.env.local` has `TRIAGE_LIVE` and `ANTHROPIC_API_KEY` both set, so live is armed; recommend blanking `TRIAGE_LIVE` at closure (restore: set it to 1). Nothing else bills (no cron, not deployed). Record every artifact URL in this file or `docs/RELEASE_NOTES.md`.
+
 ## ▶ Next session: closure (DEMO.md first)
 
 **2026-11-02: 4.5 done, Phase 4 exit criteria met. Spend to date 171¢ of 1500¢ (nothing spent this session).** `docs/EVAL.md` has one section per item (4.1, 4.2, 4.3, 4.4) with its command output, source and verdict; README status says Phase 4 done, spend 171¢; 4.5 ticked. Gate: 125 tests, typecheck, policy:lint, fixtures:check, eval scripted and recorded 1,200 of 1,200, exit 0. No hash moved.
