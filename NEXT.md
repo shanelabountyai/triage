@@ -1,5 +1,11 @@
 # NEXT
 
+## ▶ Next session: Phase 4, task 4.2 (prompt v2, spends) — switch to Opus first
+
+**2026-11-02: 4.0, 4.1, 4.3, 4.4 done (D-60, D-61). Spend to date 128¢ (nothing spent).** Gate green: 122 tests, typecheck, policy:lint, fixtures:check, eval recorded 1,200 of 1,200. Scope answer: all four items including 4.2. Verdicts in D-61: 4.1 per-category T = measured proposal MIX (T 6000 except INTEGRATION and ACCOUNT_ACCESS at 7500; recall 122/122, 81/81, 217/217, 26/29/34¢ per 1,000 vs 64/68/79¢), NOT adopted, Shane's call at the Phase 4 gate; 4.3 no effect (queue forced, +2.03¢/+2.19¢ per 1,000 as Opus); 4.4 O-7 kept (1h costs 0.31¢ more on batch 1, 0 on batch 2).
+
+**4.2 answers so far:** the ONE change v2 makes = sharpen the OUTAGE and PRIVACY_DATA definitions (contrast line each) in `prompts/classify.v2.md` beside v1; batch 1 only first. Still to record in a decision BEFORE any submit: the projected cost against the run cap (D-19, batch 1 tier A+B at baseline ~46¢; use `projectPico`), and the success bar (proposed: delivered category accuracy up on batch 1, needs_human recall still 203/203 on the recording's decisions, P1 missed 0/42, OUTAGE and PRIVACY_DATA recall up). v1 stays the policy unless a decision flips it; both recordings side by side in `docs/EVAL.md`; the v2 recording must not overwrite `recordings/batch1` (check how `triage:run --provider live` names its out dir). A moved prompt hash needs a fresh EVAL (D-16). Then 4.5 write-up (EVAL.md sections per item, README status, NEXT.md).
+
 ## ▶ Next session: Phase 3 gate review, then closure (or Phase 4)
 
 **2026-11-02: task 3.8 done, Phase 3 exit criteria met. Spend to date 128¢ (nothing spent this session).** README status rewritten with the recorded headline numbers and denominators and the EVAL link; scope banner untouched; command list and layout refreshed. Gate: 121 tests pass, typecheck, policy:lint, fixtures:check OK, `triage:eval` exit 0 (1,200 of 1,200). No hash moved, so no fresh EVAL (D-16).
