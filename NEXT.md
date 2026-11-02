@@ -1,5 +1,11 @@
 # NEXT
 
+## ▶ Next session: Phase 4, task 4.5 (write-up), then the Phase 4 gate — Sonnet fits (docs only)
+
+**2026-11-02: 4.2 done (D-62, D-63, D-64). Spend to date 171¢ of 1500¢ (43¢ this session).** Gate green: 125 tests, typecheck, policy:lint, fixtures:check, eval recorded 1,200 of 1,200. **4.2 verdict: v2 REJECTED by its own guard, v1 stays.** OUTAGE/PRIVACY queued misroutes 12 → 0, but needs_human recall 203/203 → 199/203: all four misses are AMB-03, which v1 caught only through the 6000 bps confidence floor (tier B 3000–3500 vs 6500 under v2). That fragile-margin finding is the post-worthy one. The test split is not held out for this change (same templates, D-62 amendment). The first submit timed out after tier A was paid; recovered with `--adopt-tier-a`, no double spend (D-63). `docs/EVAL.md` already has the §Phase 4.2 side-by-side.
+
+**4.5 to do:** EVAL.md sections for 4.1, 4.3 and 4.4 (verdicts are in D-61), matching the 4.2 section; README status line (Phase 4 done, spend 171¢); tick 4.5; then the Phase 4 gate (exit criteria in `docs/phase-4-tasks.md`) and stop for review before closure (DEMO.md, exec brief, LinkedIn drafts incl. D-63/D-64, cost review).
+
 ## ▶ Next session: Phase 4, task 4.2 (prompt v2, spends) — switch to Opus first
 
 **2026-11-02: 4.0, 4.1, 4.3, 4.4 done (D-60, D-61). Spend to date 128¢ (nothing spent).** Gate green: 122 tests, typecheck, policy:lint, fixtures:check, eval recorded 1,200 of 1,200. Scope answer: all four items including 4.2. Verdicts in D-61: 4.1 per-category T = measured proposal MIX (T 6000 except INTEGRATION and ACCOUNT_ACCESS at 7500; recall 122/122, 81/81, 217/217, 26/29/34¢ per 1,000 vs 64/68/79¢), NOT adopted, Shane's call at the Phase 4 gate; 4.3 no effect (queue forced, +2.03¢/+2.19¢ per 1,000 as Opus); 4.4 O-7 kept (1h costs 0.31¢ more on batch 1, 0 on batch 2).
