@@ -1,5 +1,11 @@
 # NEXT
 
+## ▶ Next session: Phase 4 gate review, then closure
+
+**2026-11-02: 4.5 done, Phase 4 exit criteria met. Spend to date 171¢ of 1500¢ (nothing spent this session).** `docs/EVAL.md` has one section per item (4.1, 4.2, 4.3, 4.4) with its command output, source and verdict; README status says Phase 4 done, spend 171¢; 4.5 ticked. Gate: 125 tests, typecheck, policy:lint, fixtures:check, eval scripted and recorded 1,200 of 1,200, exit 0. No hash moved.
+
+**Open at the gate (Shane's call):** adopt the 4.1 per-category T proposal "MIX" (D-61) or leave O-3 at 7500. Adopting means a policy field, a golden, a moved policy hash, regenerated decisions and a fresh EVAL. Then closure: `docs/DEMO.md` (every command run once), exec brief, LinkedIn drafts (D-49/D-50/D-51, D-63 recovery, D-64 fragile margin), cost review (key only; nothing else bills). Record artifact URLs in the repo.
+
 ## ▶ Next session: Phase 4, task 4.5 (write-up), then the Phase 4 gate — Sonnet fits (docs only)
 
 **2026-11-02: 4.2 done (D-62, D-63, D-64). Spend to date 171¢ of 1500¢ (43¢ this session).** Gate green: 125 tests, typecheck, policy:lint, fixtures:check, eval recorded 1,200 of 1,200. **4.2 verdict: v2 REJECTED by its own guard, v1 stays.** OUTAGE/PRIVACY queued misroutes 12 → 0, but needs_human recall 203/203 → 199/203: all four misses are AMB-03, which v1 caught only through the 6000 bps confidence floor (tier B 3000–3500 vs 6500 under v2). That fragile-margin finding is the post-worthy one. The test split is not held out for this change (same templates, D-62 amendment). The first submit timed out after tier A was paid; recovered with `--adopt-tier-a`, no double spend (D-63). `docs/EVAL.md` already has the §Phase 4.2 side-by-side.

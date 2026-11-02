@@ -115,6 +115,28 @@ Test split at T = 7500 (281 tickets): scripted 97.25% of 182 auto-handled, 99 qu
 
 Five of eight fired on the script, six of eight on the recordings, on a batch 2 designed to drift (outage surge, more non-English, a new waitlist topic). The override signal did not fire either way: the key stands in for the person (O-6) and the audit sample sees 10% of auto-handled tickets (D-21). A distance of 1000 bps means 10% of the mix moved; a delta of 500 bps means the rate rose 5 points.
 
+## Phase 4.1: per-category escalation threshold (D-61)
+
+**Verdict: measured proposal, not adopted; T stays 7500 for every category (O-3).** Replay of the recordings, no spend, answer key as judge; categories by tier A's predicted category (escalation is per ticket, so slicing the global sweep equals a per-category T). Proposal "MIX", chosen on the dev split only: T=6000 for eight categories, 7500 kept for INTEGRATION and ACCOUNT_ACCESS, the only two that lose needs_human recall below 7500 on dev (INTEGRATION 8 → 5 of 8 at 6000, ACCOUNT_ACCESS 28 → 26).
+
+```
+$ npm run sweep:category   (ALL rows; per-category rows in the command output)
+set               T     escalated   delivered-cat          human-queue    nh-recall  P1-missed  ¢/1k
+batch 1 dev       7500  247 of 419  95.69% (222/232)       187 (44.63%)   122/122    0/27        64
+batch 1 dev       6000   39 of 419  95.77% (249/260)       159 (37.95%)   117/122    0/27        14
+batch 1 dev       MIX    86 of 419  95.75% (248/259)       160 (38.19%)   122/122    0/27        26
+batch 1 test      7500  177 of 281  96.23% (153/159)       122 (43.42%)    81/81     0/15        68
+batch 1 test      6000   32 of 281  96.45% (163/169)       112 (39.86%)    77/81     0/15        16
+batch 1 test      MIX    68 of 281  96.57% (169/175)       106 (37.72%)    81/81     0/15        29
+batch 2 all       7500  370 of 500  96.45% (190/197)       303 (60.60%)   217/217    0/70        79
+batch 2 all       6000   91 of 500  96.14% (224/233)       267 (53.40%)   215/217    0/70        24
+batch 2 all       MIX   140 of 500  96.17% (226/235)       265 (53.00%)   217/217    0/70        34
+```
+
+- The global T=7500 rows reproduce the baseline exactly (222/232, 153/159, 190/197).
+- MIX keeps recall and P1 missed at baseline on all three sets and cuts cost per 1,000 by 57–59% (64 → 26¢, 68 → 29¢, 79 → 34¢). Batch 2 delivered accuracy moves −28 bps (96.45% of 197 → 96.17% of 235).
+- Why not adopted: it needs a new policy field, a golden, a moved policy hash, regenerated decisions and a fresh EVAL; the recall losses it avoids come from ~5 tickets per set; and the eight zero-loss categories include thin ones (OTHER 1, SPAM 0 key-needs_human tickets on dev). One synthetic key, same author as the tickets.
+
 ## Phase 4.2: prompt v2 beside v1, batch 1 (D-62, D-63, D-64)
 
 **Verdict: rejected by its own guard; v1 stays the policy.** v2 (`prompts/classify.v2.md`, sha256 `c23b8ad140a8…`) changes one thing: contrast lines on OUTAGE and PRIVACY_DATA. Both rows are real Message Batches responses (v1 `recordings/batch1/`, run 2026-10-25; v2 `recordings/batch1-v2/`, run 2026-11-02, tier A adopted per D-63), answer key as judge, one run each. Synthetic tickets, same author as the key; says nothing about a production inbox.
@@ -134,6 +156,35 @@ recordings/batch1-v2 test  281  79/81      0/15       169/176        14/105     
 - **Guard (failed):** needs_human recall fell from 203/203 to 199/203. All 4 misses are template AMB-03 ("Calendar shows events twice… not sure if it's Fernwick or the calendar app"). Neither prompt's model said needs_human there. v1 caught all 5 copies only because tier B's confidence (3000–3500 bps) was under the 6000 floor; under v2 it was 6500 on 4 copies. v1's 203/203 rested on that margin.
 - Delivered category: 16 → 17 errors, all template ACC-04, same route and priority as before; delivered misroutes still 0. P1 missed 0/42 in both runs.
 - Escalated to tier B: 424 → 366. Human queue: 44.14% → 38.57%. Cost: 46¢ → 43¢ at batch prices from usage fields. Spend to date: 171¢ of 1500¢.
+
+## Phase 4.3: Opus privacy tier, projected (D-61)
+
+**Verdict: no effect on delivered output, because the queue is forced; no third tier built.** Projection from the recordings' usage fields and the price table, no spend.
+
+```
+$ npm run privacy:tier
+batch 1: 700 tickets; final category PRIVACY_DATA 15 (15 went A>B); needs_human on those 15/15; tier-B cost on them as Sonnet 1.42¢ → as Opus 2.84¢, +1.42¢ on the batch = +2.03¢ per 1,000 tickets
+batch 2: 500 tickets; final category PRIVACY_DATA 11 (11 went A>B); needs_human on those 11/11; tier-B cost on them as Sonnet 1.10¢ → as Opus 2.19¢, +1.10¢ on the batch = +2.19¢ per 1,000 tickets
+```
+
+GT-04 already sends every PRIVACY_DATA ticket to a person (15/15, 11/11), so an Opus label changes only the pre-filled category the person sees. The tickets it could matter for are the ones the models do *not* call PRIVACY_DATA, and a tier gated on the final category never touches those.
+
+## Phase 4.4: 1h vs 5m cache TTL in cents (D-61)
+
+**Verdict: O-7 kept at 1h.** From recorded usage fields and the price table, batch prices, every recorded line including top-ups (so these are the usage-derived cost of all lines, not the headline run cost).
+
+```
+$ npm run cache:ttl
+batch 1 tier A: 700 requests with usage, 1h write tokens 1989, batch wall time 363.958s, cost as 1h 3.7673¢ vs as 5m 3.7598¢
+batch 1 tier B: 700 requests with usage, 1h write tokens 3978, batch wall time 423.242s, cost as 1h 67.5260¢ vs as 5m 67.2276¢
+batch 1 total (tiers A+B incl. top-up lines): 1h 71.2933¢  5m 70.9875¢  difference 0.3058¢  1h write tokens 5967
+batch 2 tier A: 500 requests with usage, 1h write tokens 0, batch wall time 302.223s, cost as 1h 2.7212¢ vs as 5m 2.7212¢
+batch 2 tier B: 500 requests with usage, 1h write tokens 0, batch wall time 423.488s, cost as 1h 48.9540¢ vs as 5m 48.9540¢
+batch 2 total (tiers A+B incl. top-up lines): 1h 51.6752¢  5m 51.6752¢  difference 0.0000¢  1h write tokens 0
+```
+
+- 1h costs 0.31¢ (0.43%) more on batch 1, one write per tier; 0 on batch 2, which read batch 1's entry 2 s after batch 1's last tier completed.
+- Every batch tier ran 302–423 s, over 5 minutes. A read refreshes the entry, so whether 5m would have held depends on the largest gap between reads inside a batch, which usage fields do not show. A 5m entry would be rewritten after any gap over 5 minutes, the normal case for the sync `/triage` path (D-57) and for batches submitted apart.
 
 ## Hashes
 

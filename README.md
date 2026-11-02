@@ -8,7 +8,7 @@ Learning project, synthetic data only. Fernwick is not a real company; every tic
 
 ## Status
 
-**Phase 3 built (2026-11-02); closure deliverables pending.** The pipeline, the live Batches provider, the recordings and the real eval are done, and so are the operate pieces: ledger view, human overrides, windowed drift report, the `node:http` handler on port 6300 (`docs/http-contract.md`) with a synchronous `POST /triage`, and the hand-off to Footnote (`docs/handoff-footnote.md`). Numbers below are from recorded model responses (`recordings/`), each with its denominator; the full tables, results source and fixture hash are in [`docs/EVAL.md`](docs/EVAL.md).
+**Phase 4 done (2026-11-02); closure deliverables pending.** The pipeline, the live Batches provider, the recordings and the real eval are done, and so are the operate pieces: ledger view, human overrides, windowed drift report, the `node:http` handler on port 6300 (`docs/http-contract.md`) with a synchronous `POST /triage`, and the hand-off to Footnote (`docs/handoff-footnote.md`). Numbers below are from recorded model responses (`recordings/`), each with its denominator; the full tables, results source and fixture hash are in [`docs/EVAL.md`](docs/EVAL.md).
 
 | Measure | Batch 1 | Batch 2 |
 |---|---|---|
@@ -16,7 +16,7 @@ Learning project, synthetic data only. Fernwick is not a real company; every tic
 | P1 missed | 0/42 | 0/70 |
 | Delivered category accuracy | 375/391 | 190/197 |
 
-Test split: 96.23% of 159. Calibration error (ECE): 8.33% and 10.21%. These are measurements on 1,200 synthetic tickets, not a claim about any real inbox. Spend to date 128¢. Session state is in `NEXT.md`.
+Test split: 96.23% of 159. Calibration error (ECE): 8.33% and 10.21%. These are measurements on 1,200 synthetic tickets, not a claim about any real inbox. Phase 4 ran four scorecards, none adopted: per-category thresholds (a measured proposal, recall held, ~58% fewer cents per 1,000, not adopted), prompt v2 (rejected by its own guard: needs_human recall 203/203 → 199/203), an Opus privacy tier (no effect, the queue is forced) and the cache TTL (1h kept, 0.31¢ dearer per batch); see `docs/EVAL.md` §Phase 4. Spend to date 171¢ of the 1500¢ cap. Session state is in `NEXT.md`.
 
 ## Commands (npm; none calls the Claude API)
 
@@ -40,7 +40,7 @@ npm run policy:lint      # schema-validates the data files, checks the D-26 hash
 | `prd-triage.md` | What and why. `docs/decisions.md` outranks it |
 | `docs/decisions.md` | decisions and open items with defaults in force, review log |
 | `docs/domain-brief.md` | Vocabulary, hard-case catalog, screen, routing policy, cost model, drift signals, goldens, kickoff measurements, fixture hashes |
-| `docs/phase-1-tasks.md` … `phase-3-tasks.md` | Task lists with acceptance criteria and exit bars |
+| `docs/phase-1-tasks.md` … `phase-4-tasks.md` | Task lists with acceptance criteria and exit bars |
 | `docs/EVAL.md` | The recorded eval: tables, denominators, results source |
 | `docs/http-contract.md`, `docs/handoff-footnote.md` | The N9 HTTP contract and the Footnote hand-off |
 | `docs/portfolio-overlap.md` | What is ported from sibling repos (real paths) and what is new |
