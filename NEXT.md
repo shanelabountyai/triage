@@ -1,5 +1,11 @@
 # NEXT
 
+## ▶ Next session: closure item 3, LinkedIn drafts into the Ledger — Sonnet fits
+
+**2026-11-02: closure item 2 done, exec brief _Triage in Brief_: https://claude.ai/artifact/4oHumD7ek2BHAUqvdsGJsh (private; share from its menu before sending).** Numbers taken from fresh runs, not docs: `npm test` 125/125 (20 files), `triage:eval --provider recorded` 1,200 of 1,200 equal, needs_human 0 of 420 missed, P1 0 of 112 skipped, 86¢ for 1,200 tickets at batch pricing, spend 171¢ of 1500¢ (nothing spent this session). Five calls: route by table (D-13), screen in code (D-15), parse failure is a failure (D-8/D-59), big human queue (D-14/D-51), v2 rejected by its guard (D-64). Queue size conceded in the brief (44% and 61%). No code link on the page; add once both pages are shared.
+
+**Still to do for closure:** (3) LinkedIn drafts into the Ledger (D-49/D-50/D-51, D-63 recovery, D-64 fragile margin); (4) cost review (blank `TRIAGE_LIVE` in `.env.local`, restore: set it to 1; nothing else bills).
+
 ## ▶ Next session: closure item 2, the exec brief (`exec-brief` skill) — Sonnet fits
 
 **2026-11-02: closure item 1 done, `docs/DEMO.md`.** Seven screens, about 15 minutes, no token spent. Every command was run once on `ff23c73`: gate 125 tests, eval recorded 1,200 of 1,200, scripted and recorded `triage:run` into a scratch ledger, live refusal (`LIVE_REFUSED`, `--env-file /dev/null`, D-59), override stand-in 287/321 rows, drift 6 of 8 fired, HTTP health/401/`POST /triage`/`POST /runs`, `HTTP_NO_TOKEN`. Spend to date 171¢ of 1500¢ (nothing this session).
