@@ -1,6 +1,16 @@
 # NEXT
 
-## ▶ Next session: Phase 3, task 3.7 (`docs/phase-3-tasks.md`)
+## ▶ Next session: Phase 3, task 3.8 (`docs/phase-3-tasks.md`), the last Phase 3 task
+
+**2026-11-02: task 3.7 done (D-59). Spend to date 128¢ (nothing spent this session).** Four carried items decided by Shane: (1) `max_tokens` stays 1024, the one stop per batch stays `FINAL_TIER_FAILED:PARSE_JSON`; (2) run cap stays 400¢ and the D-48 restore note is closed (batch 1's first tier-B pass projected 312¢, a full-batch tier B 523¢ / 373¢); (3) `triage:run --env-file <path>` (default `.env.local`), refusal smokes pass `/dev/null`, smoked to `LIVE_REFUSED`; (4) B1-0584's note written into `eval/labels/shane-30.json` and EVAL's Shane's-30 paragraph. No hash moved, so no fresh EVAL (D-16).
+
+**For 3.8 (README and EVAL refresh, Sonnet-shaped, doc only):** README status paragraph still says "Scaffold only (2026-10-19)"; rewrite with the recorded headline numbers and denominators (recall 203/203, 217/217; P1 missed 0/42, 0/70; delivered category 375/391, 190/197; test split 96.23% of 159) and the EVAL link; keep the scope banner verbatim. Refresh the stale command list (add `ledger:show`, `overrides:add`, `drift:report --window/--last`, `triage:serve`, `triage:run --env-file`), link `docs/handoff-footnote.md` and `docs/http-contract.md`. EVAL needs no fresh copy (no hash or model id moved in 3.5 or 3.7). Then the Phase 3 gate: check the exit criteria in `docs/phase-3-tasks.md`, write the Phase 4 (optional) task list or close the project, and stop for review. Closure prompts (DEMO.md, exec brief, LinkedIn posts, cost review) come with it.
+
+**Still noted:** the two 2026-10-25 `-recorded` ledger rows point at `/tmp/claude-501/rep{1,2}`; `drift:report --last N` counts each `/triage` run as a run of 1 ticket. `.env.local` line 5 `TRIAGE_HTTP_TOKEN=` is still Shane's to fill.
+
+Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 18 files, 121 tests passed · triage:eval scripted exit 0 · triage:eval recorded exit 0. Spend to date: **128¢** of the 1500¢ project cap.
+
+## Older
 
 **2026-10-30: task 3.6 done (D-58). Spend to date 128¢ (nothing spent this session).** `docs/handoff-footnote.md`, doc only: Footnote receives the `decisions.jsonl` row as is (O-9) for `needs_human: false` tickets only, from `GET /runs/<id>` `decisions` or `POST /triage` `decision`, plus `run_id` and `x-triage-contract`; a per-field table (type, what it is, what Footnote may do with it); what never appears on an auto-handled row by construction (`INJECTION_SUSPECTED`, `UNSUPPORTED_LANGUAGE:*`, `FINAL_TIER_FAILED:*`, `human:*`/`screen:*` reasons, `min_bps` < 6000, non-`en`, P1, PRIVACY_DATA, placeholder labels); what is never sent (queue tickets, ticket text, drafts, overrides, batch-path rows inside the 24 h ceiling); promises (determinism, closed enums, route recomputable, traceability by `run_id` to the D-26 hashes, version rule); non-promises with the recorded EVAL rows and denominators (recall 203/203, 217/217; P1 missed 0/42, 0/70; delivered category 375/391, 190/197; test split 96.23% of 159; ECE 8.33%/10.21%; screen 21/21, 15/15 as an upper bound). Seam: `reason` text and secondary as a field = O-9 revision, not built.
 
@@ -9,9 +19,6 @@
 **Also noted for 3.8:** README's command list is stale beyond the serve lines; link `docs/handoff-footnote.md` and `docs/http-contract.md` from the README; the two 2026-10-25 `-recorded` ledger rows point at `/tmp/claude-501/rep{1,2}`; `drift:report --last N` counts each `/triage` run as a run of 1 ticket (pass ids explicitly to compare batches). `.env.local` line 5 `TRIAGE_HTTP_TOKEN=` is still Shane's to fill.
 
 Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 18 files, 121 tests passed · triage:eval scripted 1,200 of 1,200 equal, exit 0 · triage:eval recorded 1,200 of 1,200 equal, exit 0. Spend to date: **128¢** of the 1500¢ project cap.
-
-## Older
-
 
 **2026-10-29: task 3.5 done (D-57). Spend to date 128¢ (1.45¢ spent this session: the five-ticket smoke).** `POST /triage {provider: scripted|recorded|messages, batch (replays only), ticket}` → `200 {run_id, status, decision, ledger_row}` synchronously, on the same server; failure `503 {run_id, status: failed, error, ledger_row}`. `src/providers/sync.ts` `syncProvider` sends the Batches request's `params` verbatim per tier through `client.messages.create` (prefix byte-identical by construction; `effort: low`), re-wraps the response as a Batches result line for the D-9 reader; `messagesFromEnv` shares `assertLiveEnv` with `liveFromEnv`. `src/io/sync.ts` `triageOne`: one-ticket run, ledger row with `cost_pico_standard` (billed) beside `cost_pico_batch` (notional), `latency_ms_per_call`; D-19 per call at **standard prices** (`assertProjected` exported with a `batch` flag, `projectPico` too), latch refuses without acknowledge, INCOMPLETE row if B is refused after A. `billedPico`/`spends` in `src/io/caps.ts`: the project cap and `ledger:show` count `messages` rows at standard cost. Recorded under `recordings/sync/` (`tier{A,B}.jsonl` once per ticket, `decisions.jsonl`, `calls.jsonl` manifest); `recorded` + batch `sync` replays it (committed, held by a test). `messages` calls serialize among themselves on their own chain, not behind `/runs`. `replay` returns an empty map for an empty ticket list (no tier B file needed).
 

@@ -287,7 +287,7 @@
       "needs_human": true,
       "agrees_with_pipeline_reason": false,
       "labels_ok": true,
-      "note": "judged 'human, other reason' with no note given; same text as B1-0272 and B1-0385 (judged 'reason right'), whose reasons also carried low_confidence_5500"
+      "note": "same text as B1-0272 and B1-0385 but no low_confidence reason; the reason set is inconsistent across twins (Shane, 2026-11-02, D-59)"
     },
     {
       "ticket_id": "B1-0284",
