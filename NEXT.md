@@ -1,14 +1,12 @@
 # NEXT
 
-## ▶ Next session: Phase 3, task 3.8 (`docs/phase-3-tasks.md`), the last Phase 3 task
+## ▶ Next session: Phase 3 gate review, then closure (or Phase 4)
 
-**2026-11-02: task 3.7 done (D-59). Spend to date 128¢ (nothing spent this session).** Four carried items decided by Shane: (1) `max_tokens` stays 1024, the one stop per batch stays `FINAL_TIER_FAILED:PARSE_JSON`; (2) run cap stays 400¢ and the D-48 restore note is closed (batch 1's first tier-B pass projected 312¢, a full-batch tier B 523¢ / 373¢); (3) `triage:run --env-file <path>` (default `.env.local`), refusal smokes pass `/dev/null`, smoked to `LIVE_REFUSED`; (4) B1-0584's note written into `eval/labels/shane-30.json` and EVAL's Shane's-30 paragraph. No hash moved, so no fresh EVAL (D-16).
+**2026-11-02: task 3.8 done, Phase 3 exit criteria met. Spend to date 128¢ (nothing spent this session).** README status rewritten with the recorded headline numbers and denominators and the EVAL link; scope banner untouched; command list and layout refreshed. Gate: 121 tests pass, typecheck, policy:lint, fixtures:check OK, `triage:eval` exit 0 (1,200 of 1,200). No hash moved, so no fresh EVAL (D-16).
 
-**For 3.8 (README and EVAL refresh, Sonnet-shaped, doc only):** README status paragraph still says "Scaffold only (2026-10-19)"; rewrite with the recorded headline numbers and denominators (recall 203/203, 217/217; P1 missed 0/42, 0/70; delivered category 375/391, 190/197; test split 96.23% of 159) and the EVAL link; keep the scope banner verbatim. Refresh the stale command list (add `ledger:show`, `overrides:add`, `drift:report --window/--last`, `triage:serve`, `triage:run --env-file`), link `docs/handoff-footnote.md` and `docs/http-contract.md`. EVAL needs no fresh copy (no hash or model id moved in 3.5 or 3.7). Then the Phase 3 gate: check the exit criteria in `docs/phase-3-tasks.md`, write the Phase 4 (optional) task list or close the project, and stop for review. Closure prompts (DEMO.md, exec brief, LinkedIn posts, cost review) come with it.
+**Stopped for review.** Decide: close the project or take Phase 4 (optional scorecards: prompt v2 on the same recordings, per-category thresholds, privacy tier, 5m vs 1h cache in cents). Closure needs `docs/DEMO.md` (every command run once), the exec-brief artifact, LinkedIn drafts from D-49/D-50/D-51, and the cost review (nothing bills today; the key is the only item). Record artifact URLs in the repo.
 
 **Still noted:** the two 2026-10-25 `-recorded` ledger rows point at `/tmp/claude-501/rep{1,2}`; `drift:report --last N` counts each `/triage` run as a run of 1 ticket. `.env.local` line 5 `TRIAGE_HTTP_TOKEN=` is still Shane's to fill.
-
-Gate at this checkpoint: typecheck 0 errors · policy:lint OK · fixtures:check OK · `npm test` 18 files, 121 tests passed · triage:eval scripted exit 0 · triage:eval recorded exit 0. Spend to date: **128¢** of the 1500¢ project cap.
 
 ## Older
 
