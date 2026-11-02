@@ -115,6 +115,26 @@ Test split at T = 7500 (281 tickets): scripted 97.25% of 182 auto-handled, 99 qu
 
 Five of eight fired on the script, six of eight on the recordings, on a batch 2 designed to drift (outage surge, more non-English, a new waitlist topic). The override signal did not fire either way: the key stands in for the person (O-6) and the audit sample sees 10% of auto-handled tickets (D-21). A distance of 1000 bps means 10% of the mix moved; a delta of 500 bps means the rate rose 5 points.
 
+## Phase 4.2: prompt v2 beside v1, batch 1 (D-62, D-63, D-64)
+
+**Verdict: rejected by its own guard; v1 stays the policy.** v2 (`prompts/classify.v2.md`, sha256 `c23b8ad140a8…`) changes one thing: contrast lines on OUTAGE and PRIVACY_DATA. Both rows are real Message Batches responses (v1 `recordings/batch1/`, run 2026-10-25; v2 `recordings/batch1-v2/`, run 2026-11-02, tier A adopted per D-63), answer key as judge, one run each. Synthetic tickets, same author as the key; says nothing about a production inbox.
+
+```
+$ npm run prompt:compare -- recordings/batch1 recordings/batch1-v2
+recording            split  n    nh-recall  P1-missed  delivered-cat  queued-misroute  of-which-OUTAGE/PRIVACY  OUTAGE  PRIVACY_DATA  cost
+recordings/batch1    all   700  203/203    0/42       375/391        48/309           12                       13/22   15/24         46¢
+recordings/batch1    dev   419  122/122    0/27       222/232        24/187           5                        10/17   8/12          27¢
+recordings/batch1    test  281  81/81      0/15       153/159        24/122           7                        3/5     7/12          19¢
+recordings/batch1-v2 all   700  199/203    0/42       413/430        27/270           0                        19/22   24/24         43¢
+recordings/batch1-v2 dev   419  120/122    0/27       244/254        13/165           0                        14/17   12/12         25¢
+recordings/batch1-v2 test  281  79/81      0/15       169/176        14/105           0                        5/5     12/12         18¢
+```
+
+- **Gain (met):** OUTAGE/PRIVACY tickets misrouted in the human queue fell from 12 to 0. The test split is *not* held out: 14 of its 17 OUTAGE/PRIVACY tickets reuse dev templates, and batch 2 reuses them all (D-62).
+- **Guard (failed):** needs_human recall fell from 203/203 to 199/203. All 4 misses are template AMB-03 ("Calendar shows events twice… not sure if it's Fernwick or the calendar app"). Neither prompt's model said needs_human there. v1 caught all 5 copies only because tier B's confidence (3000–3500 bps) was under the 6000 floor; under v2 it was 6500 on 4 copies. v1's 203/203 rested on that margin.
+- Delivered category: 16 → 17 errors, all template ACC-04, same route and priority as before; delivered misroutes still 0. P1 missed 0/42 in both runs.
+- Escalated to tier B: 424 → 366. Human queue: 44.14% → 38.57%. Cost: 46¢ → 43¢ at batch prices from usage fields. Spend to date: 171¢ of 1500¢.
+
 ## Hashes
 
 Data files (D-26, checked by `policy:lint`, printed on every ledger row):
