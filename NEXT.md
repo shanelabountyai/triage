@@ -1,10 +1,10 @@
 # NEXT
 
-## ▶ Next session: closure item 4, cost review — Sonnet fits
+## ▶ Closure complete — nothing queued
+
+**2026-11-02: closure item 4 done (D-66).** `TRIAGE_LIVE` blanked in `.env.local` (restore: set to 1 before a live run); `LIVE_REFUSED` verified, nothing sent. No crons, no deployment, no CI secret. All four closure deliverables exist: `docs/DEMO.md`, brief https://claude.ai/artifact/4oHumD7ek2BHAUqvdsGJsh, Ledger posts #145/#146 (https://claude.ai/artifact/Ai5xKScgT2sWtqXRQ1ZA8i), cost review. Spend to date 171¢ of 1500¢.
 
 **2026-11-02: closure item 3 done, two LinkedIn drafts in the Lab Intelligence Ledger (https://claude.ai/artifact/Ai5xKScgT2sWtqXRQ1ZA8i), approved by Shane.** #145 AI, "My new prompt fixed 12 misrouted tickets…" (D-64, EVAL 4.2: recall 203/203 → 199/203, tier B 30–35% vs 65% against the 60% floor). #146 Impact, "I read 30 tickets my AI had sent to a human…" (D-51: 30 of 30, 18 → 0 of 420 missed, queue 44% / 61%). Queued after #144 so no adjacent pillar repeats (MarTech, AI, Impact). `triage` chip added to the page's PROJECTS list (Ledger v77). Sources: CMO brief https://claude.ai/artifact/4oHumD7ek2BHAUqvdsGJsh; tech links point at `docs/EVAL.md` and `docs/decisions.md` on github.com/shanelabountyai/triage. Artifact URLs: brief above, Ledger above. Not used as posts: the D-63 timed-out-batch scar, D-13 route-by-table, and the cost-restraint angle (D-61, 64¢ → 26¢ per 1,000 not adopted) are reserve angles.
-
-**Still to do for closure:** (4) cost review: `.env.local` has `TRIAGE_LIVE` and `ANTHROPIC_API_KEY` set, so live is armed; recommend blanking `TRIAGE_LIVE` (restore: set it to 1). Nothing else bills (no cron, not deployed). Record keep/slow/off with restore note in `docs/decisions.md`. Then a BUILD LOG UPDATE block.
 
 ## ▶ Next session: closure item 3, LinkedIn drafts into the Ledger — Sonnet fits
 
