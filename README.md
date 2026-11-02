@@ -8,20 +8,29 @@ Learning project, synthetic data only. Fernwick is not a real company; every tic
 
 ## Status
 
-**Scaffold only (2026-10-19).** Task 1.1 of `docs/phase-1-tasks.md`: `package.json` (Node 22, ESM), strict `tsconfig.json`, vitest, `tsx`, the five npm commands as stubs that exit 0, and a CI workflow that holds no secret. No pipeline code yet: `src/` is empty and `triage:eval` prints `0 tickets`. What is here besides that: the PRD, decisions, domain brief, phase-1 tasks, portfolio overlap, the data files (policy, drift signals, prices, schema, prompt), the Python oracle in `tools/`, and the frozen fixtures. Start with `KICKOFF.md`; session state is in `NEXT.md`.
+**Phase 3 built (2026-11-02); closure deliverables pending.** The pipeline, the live Batches provider, the recordings and the real eval are done, and so are the operate pieces: ledger view, human overrides, windowed drift report, the `node:http` handler on port 6300 (`docs/http-contract.md`) with a synchronous `POST /triage`, and the hand-off to Footnote (`docs/handoff-footnote.md`). Numbers below are from recorded model responses (`recordings/`), each with its denominator; the full tables, results source and fixture hash are in [`docs/EVAL.md`](docs/EVAL.md).
+
+| Measure | Batch 1 | Batch 2 |
+|---|---|---|
+| needs_human recall | 203/203 | 217/217 |
+| P1 missed | 0/42 | 0/70 |
+| Delivered category accuracy | 375/391 | 190/197 |
+
+Test split: 96.23% of 159. Calibration error (ECE): 8.33% and 10.21%. These are measurements on 1,200 synthetic tickets, not a claim about any real inbox. Spend to date 128¢. Session state is in `NEXT.md`.
 
 ## Commands (npm; none calls the Claude API)
 
 ```
 npm test                 # vitest; no network, no key
-npm run triage:eval      # both fixture batches through the pipeline; prints the brief section 11 table (stub: "0 tickets")
-npm run triage:run -- --in <jsonl> --provider <scripted|recorded|live> --out <dir>   # one run (stub); live refuses before Phase 2
+npm run triage:eval      # both fixture batches through the pipeline; prints the brief section 11 table 
+npm run triage:run -- --in <jsonl> --provider <scripted|recorded|live> --out <dir>   # one run; live needs TRIAGE_LIVE=1 and a key; --env-file <path> (default .env.local)
 npm run drift:report -- --baseline <run>[,<run>…] --window <run>[,<run>…] | --last N   # the eight signals over pooled runs
 npm run ledger:show -- [--ledger <jsonl>] [--run <run_id>]                           # the run ledger as a table; --run adds that run's decisions summary
 npm run triage:serve -- [--port 6300] [--ledger <jsonl>] [--data <dir>]              # triage.http.v1 for N9 (docs/http-contract.md); needs TRIAGE_HTTP_TOKEN
                                                                                      #   POST /runs (a batch) and POST /triage (one ticket, sync; `messages` spends at standard prices)
+npm run overrides:add -- ...                                                         # record a human override in the ledger
 npm run fixtures:check   # python3 tools/verify_fixtures.py && golden_answers.py && fixtures/ unchanged in git
-npm run policy:lint      # schema-validates the data files, checks the D-26 hashes, greps src/pipeline/ (stub)
+npm run policy:lint      # schema-validates the data files, checks the D-26 hashes, greps src/pipeline/
 ```
 
 ## Layout
@@ -29,9 +38,11 @@ npm run policy:lint      # schema-validates the data files, checks the D-26 hash
 | Path | What |
 |---|---|
 | `prd-triage.md` | What and why. `docs/decisions.md` outranks it |
-| `docs/decisions.md` | D-1..D-27 resolved, O-1..O-10 open with defaults in force, review log |
+| `docs/decisions.md` | decisions and open items with defaults in force, review log |
 | `docs/domain-brief.md` | Vocabulary, hard-case catalog, screen, routing policy, cost model, drift signals, goldens, kickoff measurements, fixture hashes |
-| `docs/phase-1-tasks.md` | Tasks 1.1–1.12 with acceptance criteria and the exit bar |
+| `docs/phase-1-tasks.md` … `phase-3-tasks.md` | Task lists with acceptance criteria and exit bars |
+| `docs/EVAL.md` | The recorded eval: tables, denominators, results source |
+| `docs/http-contract.md`, `docs/handoff-footnote.md` | The N9 HTTP contract and the Footnote hand-off |
 | `docs/portfolio-overlap.md` | What is ported from sibling repos (real paths) and what is new |
 | `routing/policy.v1.json` | Labels, tiers, escalation rule, needs_human rules, route table |
 | `monitoring/drift.v1.json` | Eight drift signals with thresholds in basis points |
