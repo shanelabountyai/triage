@@ -11,7 +11,7 @@ import type { Provider, Tier } from './index.js';
 export interface BatchClient {
   messages: { batches: {
     create(body: { requests: BatchRequest[] }): PromiseLike<{ id: string }>;
-    retrieve(id: string): PromiseLike<{ id: string; processing_status: string }>;
+    retrieve(id: string): PromiseLike<{ id: string; processing_status: string; created_at?: string; ended_at?: string | null }>;
     results(id: string): PromiseLike<AsyncIterable<unknown>>;
   } };
   models: { list(): AsyncIterable<{ id: string }> };
@@ -44,6 +44,8 @@ export interface LiveConfig {
   clock?: () => number; // epoch ms; injected so a test fixes the latency
   /** called once per tier with the raw result lines, as soon as the batch is read back (the recorder, task 2.5) */
   onBatch?: (b: BatchInfo) => void;
+  /** a batch already created for this tier and paid for but never read back (task 4.2, D-63): read it, never re-send */
+  adopt?: Partial<Record<Tier, string>>;
 }
 
 export interface BatchInfo { tier: Tier; batchId: string; requests: number; submittedMs: number; completedMs: number; lines: string[] }
@@ -87,18 +89,22 @@ export function liveProvider(c: LiveConfig): Provider {
     assertPrefixIdentical(requests);
     const b = c.client.messages.batches;
     const clock = c.clock ?? Date.now;
-    const submittedMs = clock();
-    const { id } = await b.create({ requests });
-    while ((await b.retrieve(id)).processing_status !== 'ended') await sleep(c.pollMs ?? 60_000);
+    const adopted = c.adopt?.[tier];
+    let submittedMs = clock();
+    const { id } = adopted ? { id: adopted } : await b.create({ requests });
+    let st = await b.retrieve(id);
+    while (st.processing_status !== 'ended') { await sleep(c.pollMs ?? 60_000); st = await b.retrieve(id); }
+    let completedMs = clock();
+    if (adopted && st.created_at && st.ended_at) { submittedMs = Date.parse(st.created_at); completedMs = Date.parse(st.ended_at); } // the batch's own clock
     const lines: string[] = [];
-    const completedMs = clock();
     for await (const r of await b.results(id)) lines.push(JSON.stringify(r));
     c.onBatch?.({ tier, batchId: id, requests: requests.length, submittedMs, completedMs, lines });
     const { results, errors } = parseResults(lines.join('\n'));
     if (errors.length) throw new Error(`batch ${id}: ${errors.length} bad result line(s), first: ${errors[0]!.code} ${errors[0]!.detail}`);
     const ids = new Set(tickets.map((t) => t.ticket_id));
     const stray = [...results.keys()].find((k) => !ids.has(k));
-    if (stray) throw new Error(`batch ${id}: result for ${stray}, which was not submitted`);
+    if (stray) throw new Error(`${adopted ? 'ADOPT_MISMATCH: ' : ''}batch ${id}: result for ${stray}, which was not submitted`);
+    if (adopted && results.size !== ids.size) throw new Error(`ADOPT_MISMATCH: batch ${id} holds ${results.size} results for ${ids.size} tickets; it is not this run's tier ${tier}`);
     return results; // keyed by custom_id: results arrive in any order
   };
 }

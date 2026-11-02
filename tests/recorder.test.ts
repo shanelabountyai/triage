@@ -9,7 +9,7 @@ import { topUpTierB, triageRun } from '../src/io/run.js';
 import { provider } from '../src/providers/index.js';
 import { readTickets } from '../src/io/tickets.js';
 import { percentile } from '../src/pipeline/num.js';
-import { type BatchClient, type BatchRequest, liveProvider } from '../src/providers/live.js';
+import { type BatchClient, type BatchRequest, buildRequests, liveProvider } from '../src/providers/live.js';
 
 const label = (bps: number) => JSON.stringify({ category: 'BILLING', category_confidence_bps: bps, priority: 'P3', priority_confidence_bps: bps,
   needs_human: false, needs_human_confidence_bps: bps, language: 'en', secondary_category: 'NONE', reason: 'r' });
@@ -76,6 +76,25 @@ describe('recorder', () => {
     const sha = createHash('sha256').update(v2).digest('hex');
     expect(row).toMatchObject({ prompt: 'prompts/classify.v2.md', prompt_sha256: sha });
     expect(JSON.parse(readFileSync(join(s.root, 'recordings/rec/meta.json'), 'utf8'))).toMatchObject({ prompt: 'prompts/classify.v2.md', prompt_sha256: sha });
+  });
+
+  it('--adopt-tier-a: an existing tier-A batch is read back, not re-sent; only B is created; it must hold exactly these tickets', async () => {
+    const s = setup();
+    const f = fake();
+    const { tickets } = readTickets(join(s.root, 'tickets_rec.jsonl'));
+    const lc = { models: { A: 'claude-haiku-5-5', B: 'claude-sonnet-5-5' }, system: 'x', schema: {} };
+    f.sent.push(buildRequests('A', tickets, lc)); // the paid batch that was never read back: msgbatch_1
+    const { row } = await triageRun({ ...s.base, provider: 'live', outDir: join(s.root, 'out1'), caps: { runCents: 300, projectCents: 1500 }, adopt: { A: 'msgbatch_1' },
+      live: (c) => liveProvider({ ...c, client: f.client, sleep: async () => {}, clock: s.clock }) });
+    expect(f.sent).toHaveLength(2); // one create: tier B
+    expect(row).toMatchObject({ adopted: { A: 'msgbatch_1' }, tickets: 5 });
+    const meta = JSON.parse(readFileSync(join(s.root, 'recordings/rec/meta.json'), 'utf8'));
+    expect(meta).toMatchObject({ adopted: { A: 'msgbatch_1' }, tiers: { A: { batch_id: 'msgbatch_1' }, B: { batch_id: 'msgbatch_2' } } });
+
+    const t = setup(), g = fake();
+    g.sent.push(buildRequests('A', tickets.slice(0, 4), lc)); // a batch over a different ticket set
+    await expect(triageRun({ ...t.base, provider: 'live', outDir: join(t.root, 'out1'), caps: { runCents: 300, projectCents: 1500 }, adopt: { A: 'msgbatch_1' },
+      live: (c) => liveProvider({ ...c, client: g.client, sleep: async () => {} }) })).rejects.toThrow(/ADOPT_MISMATCH/);
   });
 
   it('never overwrites a recording', async () => {

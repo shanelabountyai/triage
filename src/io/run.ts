@@ -23,6 +23,8 @@ export interface RunOptions {
   caps?: Caps; acknowledgeOverCap?: boolean;
   /** live only (task 4.2, D-62): the system prompt both tiers send; named with its sha256 on meta.json and the ledger row */
   promptPath?: string;
+  /** live only (D-63): a tier batch already paid for but never read back; it is read, not re-sent, and named on meta.json and the ledger row */
+  adopt?: Partial<Record<Tier, string>>;
 }
 
 /** D-19: the ceiling projection (cache miss, MAX_TOKENS output each) must fit what both caps leave, or nothing is sent.
@@ -77,7 +79,7 @@ export async function triageRun(o: RunOptions) {
 
   const live = o.provider === 'live';
   const promptPath = o.promptPath ?? 'prompts/classify.v1.md';
-  const prompt = live ? { prompt: promptPath, prompt_sha256: sha256File(join(root, promptPath)) } : {};
+  const prompt = live ? { prompt: promptPath, prompt_sha256: sha256File(join(root, promptPath)), ...(o.adopt ? { adopted: o.adopt } : {}) } : {};
   const ledger = ledgerState(o.ledgerPath);
   const batches: BatchInfo[] = []; // live only: what the recorder writes
   let spent = 0n; // real batch cost of the tiers this run has already got back
@@ -94,7 +96,7 @@ export async function triageRun(o: RunOptions) {
       writeFileSync(join(recDir, `tier${b.tier}.jsonl`), b.lines.map((l) => l + '\n').join(''), { flag: 'wx' });
       batches.push(b); // after the write: a refused write leaves no meta.json behind
     };
-    const lc = { models, system: readFileSync(join(root, promptPath), 'utf8'), schema: c.schema as Record<string, unknown>, onBatch };
+    const lc = { models, system: readFileSync(join(root, promptPath), 'utf8'), schema: c.schema as Record<string, unknown>, onBatch, ...(o.adopt ? { adopt: o.adopt } : {}) };
     const raw = o.live(lc), caps = o.caps;
     return async (tier, ts, inPath) => {
       if (!ts.length) return new Map<string, BatchResult>();
