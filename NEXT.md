@@ -1,10 +1,10 @@
 # NEXT
 
-## ▶ Next session: Phase 4 gate review, then closure
+## ▶ Next session: closure (DEMO.md first)
 
 **2026-11-02: 4.5 done, Phase 4 exit criteria met. Spend to date 171¢ of 1500¢ (nothing spent this session).** `docs/EVAL.md` has one section per item (4.1, 4.2, 4.3, 4.4) with its command output, source and verdict; README status says Phase 4 done, spend 171¢; 4.5 ticked. Gate: 125 tests, typecheck, policy:lint, fixtures:check, eval scripted and recorded 1,200 of 1,200, exit 0. No hash moved.
 
-**Open at the gate (Shane's call):** adopt the 4.1 per-category T proposal "MIX" (D-61) or leave O-3 at 7500. Adopting means a policy field, a golden, a moved policy hash, regenerated decisions and a fresh EVAL. Then closure: `docs/DEMO.md` (every command run once), exec brief, LinkedIn drafts (D-49/D-50/D-51, D-63 recovery, D-64 fragile margin), cost review (key only; nothing else bills). Record artifact URLs in the repo.
+**Gate decided (D-65):** MIX not adopted, O-3 stays 7500. Next is closure: `docs/DEMO.md` (every command run once), exec brief, LinkedIn drafts (D-49/D-50/D-51, D-63 recovery, D-64 fragile margin), cost review (key only; nothing else bills). Record artifact URLs in the repo.
 
 ## ▶ Next session: Phase 4, task 4.5 (write-up), then the Phase 4 gate — Sonnet fits (docs only)
 
