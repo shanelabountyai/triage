@@ -21,6 +21,8 @@ export interface RunOptions {
   /** live only: builds the provider (scripts/run.ts passes liveFromEnv; tests pass a fake client) */
   live?: (c: Omit<LiveConfig, 'client'>) => Provider;
   caps?: Caps; acknowledgeOverCap?: boolean;
+  /** live only (task 4.2, D-62): the system prompt both tiers send; named with its sha256 on meta.json and the ledger row */
+  promptPath?: string;
 }
 
 /** D-19: the ceiling projection (cache miss, MAX_TOKENS output each) must fit what both caps leave, or nothing is sent.
@@ -65,7 +67,7 @@ export async function triageRun(o: RunOptions) {
   const writeMeta = () => {
     if (!batches.length) return;
     const { run_id, input, input_sha256, models: m, hashes } = base();
-    writeFileSync(join(recDir, 'meta.json'), JSON.stringify({ run_id, input, input_sha256, models: m, hashes, ...latency(),
+    writeFileSync(join(recDir, 'meta.json'), JSON.stringify({ run_id, input, input_sha256, models: m, hashes, ...prompt, ...latency(),
       tiers: Object.fromEntries(batches.map((b) => [b.tier, { batch_id: b.batchId, requests: b.requests, submitted_at: stamp(b.submittedMs), completed_at: stamp(b.completedMs) }])) }, null, 2) + '\n');
   };
   const append = (row: object) => {
@@ -74,6 +76,8 @@ export async function triageRun(o: RunOptions) {
   };
 
   const live = o.provider === 'live';
+  const promptPath = o.promptPath ?? 'prompts/classify.v1.md';
+  const prompt = live ? { prompt: promptPath, prompt_sha256: sha256File(join(root, promptPath)) } : {};
   const ledger = ledgerState(o.ledgerPath);
   const batches: BatchInfo[] = []; // live only: what the recorder writes
   let spent = 0n; // real batch cost of the tiers this run has already got back
@@ -90,7 +94,7 @@ export async function triageRun(o: RunOptions) {
       writeFileSync(join(recDir, `tier${b.tier}.jsonl`), b.lines.map((l) => l + '\n').join(''), { flag: 'wx' });
       batches.push(b); // after the write: a refused write leaves no meta.json behind
     };
-    const lc = { models, system: readFileSync(join(root, 'prompts/classify.v1.md'), 'utf8'), schema: c.schema as Record<string, unknown>, onBatch };
+    const lc = { models, system: readFileSync(join(root, promptPath), 'utf8'), schema: c.schema as Record<string, unknown>, onBatch };
     const raw = o.live(lc), caps = o.caps;
     return async (tier, ts, inPath) => {
       if (!ts.length) return new Map<string, BatchResult>();
@@ -111,7 +115,7 @@ export async function triageRun(o: RunOptions) {
     // ponytail: a batch created but never read back (poll or stream failure) is not counted; reconcile from the console
     if (live && spent > 0n) {
       const over = spent > headroomPico(o.caps!, ledger.livePico, 0n);
-      append({ ...base(), tickets: 0, intake_errors: errors.length, tokens: null, cost_pico_batch: String(spent), cost_cents: picoToCents(spent),
+      append({ ...base(), ...prompt, tickets: 0, intake_errors: errors.length, tokens: null, cost_pico_batch: String(spent), cost_cents: picoToCents(spent),
         cap_status: over ? 'OVER_CAP' : 'INCOMPLETE', error: (e as Error).message, acknowledges: o.acknowledgeOverCap ? ledger.overCap : [],
         started_at: started, finished_at: o.now(), submitted_at: null, completed_at: null, ...latency() });
     }
@@ -127,7 +131,7 @@ export async function triageRun(o: RunOptions) {
   if (live) writeFileSync(join(recDir, 'decisions.jsonl'), decisions, { flag: 'wx' });
   const finished = o.now();
   const row = {
-    ...base(), tickets: rows.length, intake_errors: errors.length,
+    ...base(), ...prompt, tickets: rows.length, intake_errors: errors.length,
     tokens: { input: tokens.input, cache_read: tokens.cacheRead, cache_write_5m: tokens.cacheCreation5m, cache_write_1h: tokens.cacheCreation1h, output: tokens.output },
     cost_pico_batch: String(costPicoBatch), cost_cents: picoToCents(costPicoBatch),
     // replays spend nothing (n/a); a live run is judged on its real cost against both caps (D-19)

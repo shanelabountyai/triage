@@ -20,7 +20,8 @@
     "shane:pick": "tsx scripts/shane-30.ts",
     "sweep:category": "tsx scripts/sweep-category.ts",
     "cache:ttl": "tsx scripts/cache-ttl.ts",
-    "privacy:tier": "tsx scripts/privacy-tier.ts"
+    "privacy:tier": "tsx scripts/privacy-tier.ts",
+    "prompt:compare": "tsx scripts/prompt-compare.ts"
   },
   "devDependencies": {
     "@types/node": "^22",

@@ -1,5 +1,6 @@
 // Task 2.5: the recorder. A fake-client live run writes recordings/<batch>/ that --provider recorded replays to the same
 // decisions. Nothing here reaches the network (D-2); the root is a temp copy, so the committed recordings/ is untouched.
+import { createHash } from 'node:crypto';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -62,6 +63,19 @@ describe('recorder', () => {
     expect(lines('out2')).toBe(lines('out1'));
     expect(lines('recordings/rec')).toBe(lines('out1')); // D-49: the recording carries the live run's decisions
     expect(replay.row).toMatchObject({ latency_s_p50: null, latency_s_p95: null });
+  });
+
+  it('--prompt (4.2, D-62): both tiers send that prompt, and meta.json and the ledger row name it with its sha256', async () => {
+    const s = setup();
+    const f = fake();
+    const { row } = await triageRun({ ...s.base, provider: 'live', outDir: join(s.root, 'out1'), caps: { runCents: 300, projectCents: 1500 }, promptPath: 'prompts/classify.v2.md',
+      live: (c) => liveProvider({ ...c, client: f.client, sleep: async () => {}, clock: s.clock }) });
+    const v2 = readFileSync('prompts/classify.v2.md', 'utf8');
+    expect(f.sent).toHaveLength(2);
+    for (const reqs of f.sent) for (const r of reqs) expect(r.params.system[0]!.text).toBe(v2);
+    const sha = createHash('sha256').update(v2).digest('hex');
+    expect(row).toMatchObject({ prompt: 'prompts/classify.v2.md', prompt_sha256: sha });
+    expect(JSON.parse(readFileSync(join(s.root, 'recordings/rec/meta.json'), 'utf8'))).toMatchObject({ prompt: 'prompts/classify.v2.md', prompt_sha256: sha });
   });
 
   it('never overwrites a recording', async () => {
