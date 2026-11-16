@@ -29,23 +29,27 @@ export function hashErrors(root = '.'): string[] {
   });
 }
 
-const FORBIDDEN = /\bfetch\b|anthropic|Date\.now|Math\.random|process\.env|['"](node:)?fs(\/promises)?['"]/i;
+const FORBIDDEN = /\bfetch\b|anthropic|Date\.now|Math\.random|process\.env|['"](node:)?fs(\/promises)?['"]/gi;
+// The one file allowed to divide, matched exactly: a suffix test also exempted enum.ts, foonum.ts, sub/num.ts.
+const NUM_TS = 'src/pipeline/num.ts';
 const FLOAT_CALLS = new Set(['Math.round', 'Math.floor', 'Math.ceil', 'Math.trunc', 'toFixed', 'parseFloat']);
 
 /** Purity and float lint for one src/pipeline/ file (non-negotiables 2 and 6, D-29 Q4). */
 export function sourceErrors(name: string, text: string): string[] {
   const errs: string[] = [];
   text.split('\n').forEach((l, i) => {
-    const m = FORBIDDEN.exec(l);
-    if (m) errs.push(`${name}:${i + 1} forbidden ${m[0]}`);
+    for (const m of l.matchAll(FORBIDDEN)) errs.push(`${name}:${i + 1} forbidden ${m[0]}`); // every hit, not the first per line
   });
   const sf = ts.createSourceFile(name, text, ts.ScriptTarget.ES2022, true);
   const at = (n: ts.Node, what: string) => errs.push(`${name}:${sf.getLineAndCharacterOfPosition(n.getStart()).line + 1} ${what}`);
   const walk = (n: ts.Node): void => {
     if (ts.isNumericLiteral(n) && /^(?!0[xX]).*[.eE]/.test(n.getText())) at(n, `float literal ${n.getText()}`);
-    if (ts.isBinaryExpression(n) && !name.endsWith('num.ts')
+    if (ts.isBinaryExpression(n) && name !== NUM_TS
       && (n.operatorToken.kind === ts.SyntaxKind.SlashToken || n.operatorToken.kind === ts.SyntaxKind.SlashEqualsToken)) at(n, 'division outside num.ts');
-    if ((ts.isPropertyAccessExpression(n) || ts.isIdentifier(n)) && FLOAT_CALLS.has(n.getText())) at(n, `float op ${n.getText()}`);
+    // Whitespace-insensitive (`Math . round`), and `Math['round']` counts as the same call.
+    const op = ts.isPropertyAccessExpression(n) || ts.isIdentifier(n) ? n.getText().replace(/\s+/g, '')
+      : ts.isElementAccessExpression(n) && ts.isStringLiteralLike(n.argumentExpression) ? `${n.expression.getText()}.${n.argumentExpression.text}` : '';
+    if (FLOAT_CALLS.has(op) || FLOAT_CALLS.has(op.slice(op.lastIndexOf('.') + 1)) && ts.isElementAccessExpression(n)) at(n, `float op ${op}`);
     ts.forEachChild(n, walk);
   };
   walk(sf);
