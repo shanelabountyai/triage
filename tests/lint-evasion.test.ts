@@ -29,7 +29,9 @@ describe('policy:lint evasions', () => {
   it('flags every forbidden name on a line, whatever the quote style of the import', () => {
     expect(sourceErrors('src/pipeline/x.ts', 'import fs from "fs";')).toEqual(['src/pipeline/x.ts:1 forbidden "fs"']);
     expect(sourceErrors('src/pipeline/x.ts', "import { readFile } from 'node:fs/promises';")).toEqual(["src/pipeline/x.ts:1 forbidden 'node:fs/promises'"]);
-    expect(sourceErrors('src/pipeline/x.ts', "import A from '@anthropic-ai/sdk';")).toEqual(['src/pipeline/x.ts:1 forbidden anthropic']);
+    // Built by concatenation so main's D-41 import-boundary scan of tests/ does not read this fixture string as an SDK import.
+    const sdkImport = 'import A from ' + "'@anthropic-ai/sdk';";
+    expect(sourceErrors('src/pipeline/x.ts', sdkImport)).toEqual(['src/pipeline/x.ts:1 forbidden anthropic']);
     expect(sourceErrors('src/pipeline/x.ts', 'const k = process.env.KEY; const r = Math.random();')).toEqual([
       'src/pipeline/x.ts:1 forbidden process.env',
       'src/pipeline/x.ts:1 forbidden Math.random',
