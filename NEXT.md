@@ -1,5 +1,9 @@
 # NEXT
 
+## ▶ PR #3 hardening merged up to main — awaiting owner review
+
+**2026-11-16: PR #3 (`overnight/2026-10-20-hardening`) brought up to main and documented (D-68).** origin/main merged into the branch (merge commit, no rebase). Lint-evasion test's SDK-import fixture string now built by concatenation so main's D-41 import-boundary test passes without being narrowed. D-68 records the policy:lint changes (every forbidden hit per line, exact `src/pipeline/num.ts` exemption, `Math . round` / `Math['round']` caught) and the validate.ts own-key lookup. Gate on the merged branch: typecheck OK, policy:lint OK, fixtures:check OK, `npm test` 204 passed 0 failed (26 files), `triage:eval` scripted 1,200 of 1,200 and recorded 1,200 of 1,200 equal, both outputs byte-identical to main. No hash, fixture or policy moved. Spend to date 171¢ of 1500¢ (0 this session). **Open:** owner review and merge of PR #3.
+
 ## ▶ Closure complete — nothing queued
 
 **2026-11-02: closure item 4 done (D-66).** `TRIAGE_LIVE` blanked in `.env.local` (restore: set to 1 before a live run); `LIVE_REFUSED` verified, nothing sent. No crons, no deployment, no CI secret. All four closure deliverables exist: `docs/DEMO.md`, brief https://claude.ai/artifact/4oHumD7ek2BHAUqvdsGJsh, Ledger posts #145/#146 (https://claude.ai/artifact/Ai5xKScgT2sWtqXRQ1ZA8i), cost review. Spend to date 171¢ of 1500¢.
