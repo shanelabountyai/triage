@@ -95,7 +95,7 @@ Tier A = `claude-haiku-5-5` reads every ticket. Tier B = `claude-sonnet-5-5` rea
 
 **Escalate to B when** (any): tier A's minimum over `category_confidence_bps`, `priority_confidence_bps`, `needs_human_confidence_bps` is **< 7500** (O-3); tier A's category ∈ {PRIVACY_DATA, OUTAGE}; tier A failed (API result not `succeeded`, or a parse failure). Tier B's labels replace tier A's.
 
-**needs_human = true when** (any, reasons in this order): the final tier said so; final priority P1; final category PRIVACY_DATA; final minimum confidence < 6000; the screen fired; final `language` ∉ {en}; the final tier failed. A final-tier failure uses the placeholder OTHER/P3 for queue placement only and is flagged `FINAL_TIER_FAILED:<code>`.
+**needs_human = true when** (any, reasons in this order): the final tier said so; final priority P1; final category PRIVACY_DATA; final minimum confidence < 6000; final `language` ∉ {en}; final category ∈ {HOW_TO, FEATURE_REQUEST} with a secondary category (D-51); the screen fired; the final tier failed. A final-tier failure uses the placeholder OTHER/P3 for queue placement only and is flagged `FINAL_TIER_FAILED:<code>`.
 
 **SPAM floor:** category SPAM → priority P4, route NONE; auto-handled unless another rule fires.
 
@@ -109,7 +109,7 @@ What the numbers mean: 7500 is where, on the scripted dev split, delivered accur
 
 System prompt `prompts/classify.v1.md` (version in the file name; any edit bumps it, D-20). Output schema `schemas/triage.v1.json`: nine required keys, no nullable types, `additionalProperties: false`, enum compare case-insensitive. Structured output is requested with `output_config.format = {type: "json_schema", schema}` (structured-outputs docs, read 2026-10-19); numeric bounds are not in the API's supported schema subset, so 0..10000 is checked after parsing. Prefix caching needs ≥ 512 tokens on the 5.5 models (prompt-caching docs, read 2026-10-19); the prompt plus schema is about 1,316 tokens by the `bytes/4` estimate and Phase 2 confirms with `count_tokens`.
 
-Parse codes (D-8): `PARSE_JSON`, `PARSE_SHAPE`, `PARSE_MISSING:<key>`, `PARSE_EXTRA_KEY`, `PARSE_ENUM:<key>`, `PARSE_RANGE:<key>` (also catches a float or a bool where an integer belongs), `PARSE_TYPE:<key>`.
+Parse codes (D-8): `PARSE_JSON`, `PARSE_SHAPE`, `PARSE_MISSING:<key>`, `PARSE_EXTRA_KEY`, `PARSE_ENUM:<key>`, `PARSE_RANGE:<key>` (also catches a float or a bool where an integer belongs), `PARSE_TYPE:<key>`, `PARSE_REFUSAL` (`stop_reason: "refusal"`, D-40).
 
 ## 8. Cost model (`pricing/prices.v1.json`)
 
@@ -170,10 +170,11 @@ Each row was worked by hand from §5–§9 and is checked by `tools/golden_answe
 | GT-12 | A: SPAM/**P3**/false (9600, 7900, 9600) | `A`, P4 by the spam floor, NONE, auto-handled |
 | GT-13 | A: BILLING/P2/true (8800×3), secondary HOW_TO | `A>H`, flag `SECONDARY:HOW_TO`, reason `human:model_says` |
 | GT-14 | A: INTEGRATION/P3/false (9900, 9900, **7400**); B: same at 9900 | `A>B`, reason `escalate:LOW_CONFIDENCE:7400<7500` — the minimum over three fields decides |
+| GT-15 | A: HOW_TO/P3/false (8800×3), secondary BILLING | `A>H`, TIER1, flag `SECONDARY:BILLING`, reason `human:secondary_BILLING` — the straddle rule (D-51) |
 
 **GS screen:** GS-01 INJ-01 → `role_marker`, `override`, `label_directive` · GS-02 INJ-04 → `fake_tool_output` · GS-03 INJ-03 → `addressed_to_agent`, `label_directive` · GS-04 a clean billing ticket → nothing · GS-05 "This is a high priority for us: our clients cannot book." → nothing · GS-06 INJ-07 → `exfiltration` · GS-07 "pre-reviewed by the support lead" → `approval_claim`.
 
-**GP parse:** GP-01 `"billing"`, `"EN"`, `"none"` parse to BILLING, `en`, NONE · GP-02 prose → `PARSE_JSON` · GP-03 `"REFUND"` → `PARSE_ENUM:category` · GP-04 `10001` → `PARSE_RANGE:category_confidence_bps` · GP-05 no `reason` → `PARSE_MISSING:reason` · GP-06 an extra `route` key → `PARSE_EXTRA_KEY` · GP-07 `"needs_human": 0` → `PARSE_TYPE:needs_human` · GP-08 `9000.0` → `PARSE_RANGE:category_confidence_bps`.
+**GP parse:** GP-01 `"billing"`, `"EN"`, `"none"` parse to BILLING, `en`, NONE · GP-02 prose → `PARSE_JSON` · GP-03 `"REFUND"` → `PARSE_ENUM:category` · GP-04 `10001` → `PARSE_RANGE:category_confidence_bps` · GP-05 no `reason` → `PARSE_MISSING:reason` · GP-06 an extra `route` key → `PARSE_EXTRA_KEY` · GP-07 `"needs_human": 0` → `PARSE_TYPE:needs_human` · GP-08 `9000.0` → `PARSE_RANGE:category_confidence_bps` · GP-09 a `stop_reason: "refusal"` result, even one whose text parses → `PARSE_REFUSAL` (vitest only; the oracle does not model refusal).
 
 **GC cost** (pico-USD): GC-01 Haiku, standard, 100 input + 1,300 cache read + 80 output = 100×100,000 + 1,300×10,000 + 80×500,000 = **63,000,000** ($0.000063) · GC-02 same in a batch = **31,500,000** · GC-03 Sonnet, 1h write of 1,300 + 100 input + 80 output = 200,000,000 + 5,200,000,000 + 800,000,000 = **6,200,000,000** · GC-04 same as a 5m write = 200,000,000 + 3,250,000,000 + 800,000,000 = **4,250,000,000** · GC-05 Haiku with 100,001 input tokens uses the long-prompt row: 100,001 × 500,000 · GC-06 1,000 × GC-02 = $0.0315 → **3 cents** · GC-07 1,000 × GC-01 = $0.063 → **6 cents** · GC-08 exactly half a cent → 1 cent · GC-09 `claude-opus-4-1` → raises.
 
@@ -244,7 +245,7 @@ python3 tools/verify_fixtures.py                                     # regenerat
 | scripted_tierB_batch1.jsonl | 700 | `e10bd7c68a54802e40d22ed65056ca0b33099f6f4d3c1d924011868cb0cf573c` |
 | scripted_tierA_batch2.jsonl | 500 | `d2edb22959284ea3476f4a1c31c4f4142f3d435304bca684f49f31e4ebca8090` |
 | scripted_tierB_batch2.jsonl | 500 | `9ca45f14d664518d5c5e123af7304a5ae1aa6df67e65f4836c87e51e7609e874` |
-| decisions_batch1.csv (reference pipeline) | 700 | `e9f5d01c297b8ed70fd9cd69f72bb8841434ead1611e7a38ec4aae174157708c` |
-| decisions_batch2.csv (reference pipeline) | 500 | `6788c9416ce0c82ec5efacacdee9865fb3e463a4ae0583fb062c6be5e385f81d` |
+| decisions_batch1.csv (reference pipeline) | 700 | `9102e3b8814db7174ce46266dabba3d011c46db3c195f6e1387d8961bf9367f6` |
+| decisions_batch2.csv (reference pipeline) | 500 | `2515c632aa1352fbb341c5256d0412524c5889ebf10875a71a7913c24b9a40f7` |
 
 Generated twice in separate directories at kickoff with identical hashes for all ten files, `MANIFEST.json` and the reference output. The whole set (2.3 MB) is committed because the scripted files are the replay source for every test (D-25). Answer-key columns: `ticket_id, category, secondary_category, priority, needs_human, language, hard_case, injection_id, attacker_wants, template_id, split`. Decision columns: `ticket_id, path, final_tier, category, priority, route, needs_human, language, min_bps, flags, reasons, cost_pico_batch, cost_pico_standard, human_touched, overridden`. Product code never reads an answer key or a decisions file; only `triage:eval` does.

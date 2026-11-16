@@ -1,0 +1,122 @@
+// The live provider (task 2.2, Phase 2): one Message Batch per tier. Tests drive it with a fake client;
+// nothing under tests/ reaches the network (D-2). Results go through the same D-9 reader as the replays,
+// so a live line and a recorded line are judged by one parser.
+import Anthropic from '@anthropic-ai/sdk';
+import type { Ticket } from '../io/tickets.js';
+import { parseResults } from '../io/results.js';
+import type { BatchResult } from '../pipeline/parse.js';
+import type { Provider, Tier } from './index.js';
+
+/** The slice of the SDK client the provider uses; the real `Anthropic` client satisfies it. */
+export interface BatchClient {
+  messages: { batches: {
+    create(body: { requests: BatchRequest[] }): PromiseLike<{ id: string }>;
+    retrieve(id: string): PromiseLike<{ id: string; processing_status: string; created_at?: string; ended_at?: string | null }>;
+    results(id: string): PromiseLike<AsyncIterable<unknown>>;
+  } };
+  models: { list(): AsyncIterable<{ id: string }> };
+}
+
+/** D-47: both policy model ids must be listed before anything is sent; names every missing id. */
+export async function assertModelsListed(client: Pick<BatchClient, 'models'>, models: Record<Tier, string>): Promise<void> {
+  const want = new Set(Object.values(models));
+  for await (const m of client.models.list()) want.delete(m.id);
+  if (want.size) throw new Error(`MODEL_NOT_LISTED: ${[...want].join(', ')}; nothing was sent`);
+}
+
+export interface BatchRequest {
+  custom_id: string;
+  params: {
+    model: string; max_tokens: number;
+    system: { type: 'text'; text: string; cache_control: { type: 'ephemeral'; ttl: '1h' } }[];
+    messages: { role: 'user'; content: string }[];
+    output_config: { effort: 'low'; format: { type: 'json_schema'; schema: Record<string, unknown> } };
+  };
+}
+
+export interface LiveConfig {
+  client: BatchClient;
+  models: Record<Tier, string>;
+  system: string; // prompts/classify.v1.md, as bytes on disk
+  schema: Record<string, unknown>; // schemas/triage.v1.json
+  sleep?: (ms: number) => Promise<void>;
+  pollMs?: number;
+  clock?: () => number; // epoch ms; injected so a test fixes the latency
+  /** called once per tier with the raw result lines, as soon as the batch is read back (the recorder, task 2.5) */
+  onBatch?: (b: BatchInfo) => void;
+  /** a batch already created for this tier and paid for but never read back (task 4.2, D-63): read it, never re-send */
+  adopt?: Partial<Record<Tier, string>>;
+}
+
+export interface BatchInfo { tier: Tier; batchId: string; requests: number; submittedMs: number; completedMs: number; lines: string[] }
+
+// D-42: the 2.3 projection allows this many output tokens per request (D-40 item 3).
+export const MAX_TOKENS = 1024;
+
+/** The ticket as the user turn. Data, never an instruction (non-negotiable 11); the screen already ran. */
+export const userTurn = (t: Ticket) => `Subject: ${t.subject}\n\n${t.body}`;
+
+export function buildRequests(tier: Tier, tickets: Ticket[], c: Pick<LiveConfig, 'models' | 'system' | 'schema'>): BatchRequest[] {
+  // `$comment` is documentation for people, not part of the API's schema subset (D-42).
+  const { $comment: _doc, ...schema } = c.schema;
+  return tickets.map((t) => ({
+    custom_id: t.ticket_id,
+    params: {
+      model: c.models[tier], max_tokens: MAX_TOKENS,
+      system: [{ type: 'text', text: c.system, cache_control: { type: 'ephemeral', ttl: '1h' } }], // O-7
+      messages: [{ role: 'user', content: userTurn(t) }],
+      // no prefill, no sampling params, no budget_tokens: each is a 400 on the 5.5 models; effort per D-40
+      output_config: { effort: 'low', format: { type: 'json_schema', schema } },
+    },
+  }));
+}
+
+/** Non-negotiable 8: the cached prefix (system + schema) is byte-identical across the batch, or nothing is sent. */
+export function assertPrefixIdentical(requests: BatchRequest[]): void {
+  const prefix = (r: BatchRequest) => JSON.stringify([r.params.system, r.params.output_config]);
+  const first = requests[0] && prefix(requests[0]);
+  const bad = requests.find((r) => prefix(r) !== first);
+  if (bad) throw new Error(`PREFIX_NOT_IDENTICAL: ${bad.custom_id} differs from ${requests[0]!.custom_id}; nothing was sent`);
+}
+
+export function liveProvider(c: LiveConfig): Provider {
+  const sleep = c.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
+  let listed: Promise<void> | undefined; // one list call per provider, before the first submit
+  return async (tier, tickets) => {
+    if (!tickets.length) return new Map<string, BatchResult>();
+    await (listed ??= assertModelsListed(c.client, c.models));
+    const requests = buildRequests(tier, tickets, c);
+    assertPrefixIdentical(requests);
+    const b = c.client.messages.batches;
+    const clock = c.clock ?? Date.now;
+    const adopted = c.adopt?.[tier];
+    let submittedMs = clock();
+    const { id } = adopted ? { id: adopted } : await b.create({ requests });
+    let st = await b.retrieve(id);
+    while (st.processing_status !== 'ended') { await sleep(c.pollMs ?? 60_000); st = await b.retrieve(id); }
+    let completedMs = clock();
+    if (adopted && st.created_at && st.ended_at) { submittedMs = Date.parse(st.created_at); completedMs = Date.parse(st.ended_at); } // the batch's own clock
+    const lines: string[] = [];
+    for await (const r of await b.results(id)) lines.push(JSON.stringify(r));
+    c.onBatch?.({ tier, batchId: id, requests: requests.length, submittedMs, completedMs, lines });
+    const { results, errors } = parseResults(lines.join('\n'));
+    if (errors.length) throw new Error(`batch ${id}: ${errors.length} bad result line(s), first: ${errors[0]!.code} ${errors[0]!.detail}`);
+    const ids = new Set(tickets.map((t) => t.ticket_id));
+    const stray = [...results.keys()].find((k) => !ids.has(k));
+    if (stray) throw new Error(`${adopted ? 'ADOPT_MISMATCH: ' : ''}batch ${id}: result for ${stray}, which was not submitted`);
+    if (adopted && results.size !== ids.size) throw new Error(`ADOPT_MISMATCH: batch ${id} holds ${results.size} results for ${ids.size} tickets; it is not this run's tier ${tier}`);
+    return results; // keyed by custom_id: results arrive in any order
+  };
+}
+
+/** D-19: TRIAGE_LIVE=1 and a key, or nothing is constructed or sent. Shared by the Batches and the `messages` (task 3.5) paths. */
+export function assertLiveEnv(env: Record<string, string | undefined>): string {
+  if (env['TRIAGE_LIVE'] !== '1') throw new Error('LIVE_REFUSED: TRIAGE_LIVE=1 is not set; nothing was sent');
+  if (!env['ANTHROPIC_API_KEY']) throw new Error('LIVE_REFUSED: ANTHROPIC_API_KEY is not set; nothing was sent');
+  return env['ANTHROPIC_API_KEY'];
+}
+
+/** Refuses unless TRIAGE_LIVE=1 and a key are both set (D-19); nothing is constructed or sent otherwise. */
+export function liveFromEnv(env: Record<string, string | undefined>, c: Omit<LiveConfig, 'client'>): Provider {
+  return liveProvider({ ...c, client: new Anthropic({ apiKey: assertLiveEnv(env) }) });
+}

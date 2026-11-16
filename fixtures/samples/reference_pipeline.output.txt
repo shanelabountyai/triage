@@ -1,5 +1,5 @@
 triage reference pipeline  results=scripted  seed=20261019  policy=v1 (T=7500)  fixtures seed=20261019
-policy sha256 1853dfe9c919  drift 6df58154d1c2  prices bc2d7fed5aad  prompt 97b5dcb644b0  schema c94a2c1d4e8d
+policy sha256 5d715339f21e  drift 6df58154d1c2  prices bc2d7fed5aad  prompt 97b5dcb644b0  schema c94a2c1d4e8d
 NOTE: results are from tools/scripted_model.py, a designed error model. These numbers test the plumbing and the arithmetic, not a model. Token counts are estimates.
 
 == batch 1: 700 tickets ==
@@ -79,14 +79,14 @@ override rate: 46/272 human-touched (16.91%); human = answer key (assumed perfec
 
 threshold sweep, batch 1, dev split only (T = escalate to B when tier-A min confidence is below T):
   T     escalated   delivered-category-acc   human-queue   cost/1k batch (cents)
-  6000   100 ( 23.87%)    94.96% of 278         141 ( 33.65%)       16
-  6500   130 ( 31.03%)    95.31% of 277         142 ( 33.89%)       19
-  7000   156 ( 37.23%)    96.76% of 278         141 ( 33.65%)       23
+  6000   100 ( 23.87%)    95.31% of 277         142 ( 33.89%)       16
+  6500   130 ( 31.03%)    95.65% of 276         143 ( 34.13%)       19
+  7000   156 ( 37.23%)    97.11% of 277         142 ( 33.89%)       23
   7500   191 ( 45.58%)    97.83% of 277         142 ( 33.89%)       27
   8000   222 ( 52.98%)    98.56% of 278         141 ( 33.65%)       31
   8500   332 ( 79.24%)    98.92% of 277         142 ( 33.89%)       45
-  9000   392 ( 93.56%)    98.90% of 273         146 ( 34.84%)       53
-  9500   415 ( 99.05%)    98.15% of 271         148 ( 35.32%)       56
+  9000   392 ( 93.56%)    98.90% of 272         147 ( 35.08%)       53
+  9500   415 ( 99.05%)    98.15% of 270         149 ( 35.56%)       56
 at policy T=7500, batch 1 TEST split: n 281  delivered category accuracy 97.25% of 182 auto-handled  human queue 99
 
 drift: batch 2 window vs batch 1 baseline (monitoring/drift.v1.json)

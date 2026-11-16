@@ -26,6 +26,8 @@ export interface BatchResult {
   model: string | null;
   text: string | null;
   usage: Usage | null;
+  /** `message.stop_reason`; `refusal` is PARSE_REFUSAL whatever the text says (D-40 item 4). */
+  stopReason?: string | null;
 }
 
 /** A tier's outcome: parsed, or failure = the API result type, `missing`, or a PARSE_* code. */
@@ -89,6 +91,7 @@ export function parseResult(text: string, schema: Schema): { parsed: Parsed } | 
 export function tierResult(r: BatchResult | undefined, schema: Schema): TierResult {
   if (!r) return { model: null, parsed: null, failure: 'missing', usage: null };
   if (r.type !== 'succeeded') return { model: r.model, parsed: null, failure: r.type, usage: r.usage };
+  if (r.stopReason === 'refusal') return { model: r.model, parsed: null, failure: 'PARSE_REFUSAL', usage: r.usage };
   const p = parseResult(r.text ?? '', schema);
   return 'parsed' in p
     ? { model: r.model, parsed: p.parsed, failure: '', usage: r.usage }

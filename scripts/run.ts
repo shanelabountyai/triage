@@ -1,3 +1,45 @@
-// triage:run -- --in <jsonl> --provider <scripted|recorded|live> --out <dir> — task 1.9.
-// The `live` provider does not exist before Phase 2 (D-2); this stub runs nothing and spends nothing.
-console.log('triage:run: not implemented (task 1.9); no run performed, 0 tokens');
+// triage:run -- --in <jsonl> --provider <scripted|recorded|live> --out <dir> [--audit-seed N] [--acknowledge-over-cap] [--prompt <md>] [--adopt-tier-a <batch id>] — tasks 1.9, 2.3, 4.2.
+// `live` spends money: it needs TRIAGE_LIVE=1 and a key (from --env-file, default .env.local, loaded here only; D-40) and passes the D-19 caps.
+// A refusal smoke passes --env-file /dev/null so the key is not loaded and .env.local is never moved (D-59).
+// --top-up-tier-b (live only, task 2.9): tier B over the recording's non-escalated tickets, appended to recordings/<name>/tierB.jsonl.
+import { existsSync } from 'node:fs';
+import { parseArgs } from 'node:util';
+import { capsFromEnv } from '../src/io/caps.js';
+import { topUpTierB, triageRun } from '../src/io/run.js';
+import { PROVIDERS, type ProviderName } from '../src/providers/index.js';
+import { liveFromEnv } from '../src/providers/live.js';
+
+const { values: v } = parseArgs({ options: {
+  in: { type: 'string' }, provider: { type: 'string' }, out: { type: 'string' },
+  'audit-seed': { type: 'string', default: '20261019' }, ledger: { type: 'string', default: 'data/runs.jsonl' },
+  'acknowledge-over-cap': { type: 'boolean', default: false }, 'top-up-tier-b': { type: 'boolean', default: false },
+  'env-file': { type: 'string', default: '.env.local' }, prompt: { type: 'string', default: 'prompts/classify.v1.md' }, 'adopt-tier-a': { type: 'string' },
+} });
+const topUp = v['top-up-tier-b'];
+if (!v.in || (!v.out && !topUp) || !PROVIDERS.includes(v.provider as ProviderName) || !/^\d+$/.test(v['audit-seed']) || (topUp && v.provider !== 'live')) {
+  console.error(`usage: triage:run -- --in <jsonl> --provider <${PROVIDERS.join('|')}> --out <dir> [--audit-seed N] [--ledger <jsonl>] [--acknowledge-over-cap] [--prompt <md>] [--adopt-tier-a <batch id>]\n`
+    + '       triage:run -- --in <jsonl> --provider live --top-up-tier-b [--ledger <jsonl>] [--acknowledge-over-cap] [--env-file <path>]');
+  process.exit(2);
+}
+const live = v.provider === 'live';
+try {
+  if (live && existsSync(v['env-file'])) process.loadEnvFile(v['env-file']);
+  if (topUp) {
+    const { row, targets, escalated } = await topUpTierB({ inPath: v.in, ledgerPath: v.ledger, now: () => new Date().toISOString(),
+      live: (c) => liveFromEnv(process.env, c), caps: capsFromEnv(process.env), acknowledgeOverCap: v['acknowledge-over-cap'] });
+    console.log(`top-up ${row.run_id}: tier B over ${targets} non-escalated tickets (${escalated} were escalated by the recording), real cost ${row.cost_cents}¢ at batch prices from usage fields, cap ${row.cap_status}`);
+    console.log(`  ${row.topup_of}/tierB.jsonl appended, meta.json topup noted · ledger ${v.ledger}`);
+    process.exit(0);
+  }
+  const { row } = await triageRun({ inPath: v.in, provider: v.provider as ProviderName, outDir: v.out!, ledgerPath: v.ledger,
+    auditSeed: Number(v['audit-seed']), now: () => new Date().toISOString(),
+    ...(live ? { live: (c) => liveFromEnv(process.env, c), caps: capsFromEnv(process.env), acknowledgeOverCap: v['acknowledge-over-cap'], promptPath: v.prompt,
+      ...(v['adopt-tier-a'] ? { adopt: { A: v['adopt-tier-a'] } } : {}) } : {}) });
+  console.log(live
+    ? `run ${row.run_id}: ${row.tickets} tickets, ${row.intake_errors} intake errors, real cost ${row.cost_cents}¢ at batch prices from usage fields, cap ${row.cap_status}`
+    : `run ${row.run_id}: ${row.tickets} tickets, ${row.intake_errors} intake errors, cost ${row.cost_cents}¢ at batch prices (${row.provider}, results not a measurement), 0 tokens spent`);
+  console.log(`  ${v.out}/decisions.jsonl · ledger ${v.ledger}`);
+} catch (e) {
+  console.error(`triage:run refused: ${(e as Error).message}`);
+  process.exit(1);
+}

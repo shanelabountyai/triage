@@ -10,14 +10,26 @@
     "typecheck": "tsc --noEmit",
     "triage:eval": "tsx scripts/eval.ts",
     "triage:run": "tsx scripts/run.ts",
+    "triage:serve": "tsx scripts/serve.ts",
     "drift:report": "tsx scripts/drift-report.ts",
+    "ledger:show": "tsx scripts/ledger-show.ts",
+    "overrides:standin": "tsx scripts/overrides-standin.ts",
+    "overrides:add": "tsx scripts/overrides-add.ts",
     "fixtures:check": "python3 tools/verify_fixtures.py && python3 tools/golden_answers.py && git diff --exit-code fixtures/ && test -z \"$(git status --porcelain fixtures/)\"",
-    "policy:lint": "tsx scripts/policy-lint.ts"
+    "policy:lint": "tsx scripts/policy-lint.ts",
+    "shane:pick": "tsx scripts/shane-30.ts",
+    "sweep:category": "tsx scripts/sweep-category.ts",
+    "cache:ttl": "tsx scripts/cache-ttl.ts",
+    "privacy:tier": "tsx scripts/privacy-tier.ts",
+    "prompt:compare": "tsx scripts/prompt-compare.ts"
   },
   "devDependencies": {
     "@types/node": "^22",
     "tsx": "^4.23.13",
     "typescript": "^5.6",
     "vitest": "^2.1"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.137.0"
   }
 }

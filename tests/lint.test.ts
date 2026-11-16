@@ -1,4 +1,4 @@
-import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -69,5 +69,23 @@ describe('policy:lint', () => {
       'src/pipeline/x.ts:4 float op toFixed',
     ]);
     expect(sourceErrors('src/pipeline/num.ts', 'const q = 2n / 3n;')).toEqual([]);
+  });
+});
+
+// Task 2.1 (D-41): the SDK is a runtime dependency now, and the only place it may be imported is src/providers/.
+const specifiers = (dir: string): [string, string][] =>
+  readdirSync(dir, { recursive: true, encoding: 'utf8' })
+    .filter((f) => f.endsWith('.ts'))
+    .flatMap((f) => [...readFileSync(join(dir, f), 'utf8').matchAll(/(?:from|import)\s*\(?\s*['"]([^'"]+)['"]/g)].map((m): [string, string] => [join(dir, f), m[1]!]));
+
+describe('import boundary', () => {
+  it('src/pipeline/ imports only its own files and node:crypto', () => {
+    expect(specifiers('src/pipeline').filter(([, s]) => !s.startsWith('./') && s !== 'node:crypto')).toEqual([]);
+  });
+
+  it('@anthropic-ai/sdk is imported only under src/providers/', () => {
+    const outside = ['src', 'scripts', 'tests'].flatMap(specifiers)
+      .filter(([f, s]) => s.startsWith('@anthropic-ai/') && !f.startsWith('src/providers/'));
+    expect(outside).toEqual([]);
   });
 });
